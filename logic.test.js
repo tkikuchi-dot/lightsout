@@ -15,7 +15,6 @@ const {
   gaugeLevel,
   isAllOff,
   isStrained,
-  lightRatio,
   loadRatio,
   maxLights,
   power,
@@ -147,13 +146,8 @@ assert.equal(power(full), tripThreshold());
 assert.equal(isFullyOn(full), true);
 assert.equal(breakerTrips(full), true);
 assert.equal(formatAmps(power(full)), BREAKER_AMPS.toFixed(1));
-assert.equal(lightRatio(full), 1);
-assert.equal(lightRatio(loaded({ brightness: 0, volume: 0 })), 1);
-
 const missingBulb = loaded();
-missingBulb.grids[0][0][0] = 0;
-assert.equal(lightRatio(missingBulb), 37 / 38);
-assert.equal(breakerTrips(missingBulb), false);
+missingBulb.grids[0][0][0] = 0;assert.equal(breakerTrips(missingBulb), false);
 assert.equal(isStrained(missingBulb), false);
 
 const dim = loaded({ brightness: 99 });

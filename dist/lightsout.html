@@ -360,44 +360,6 @@ main {
   letter-spacing: 0.04em;
 }
 
-.switch-meter {
-  position: relative;
-  width: 66px;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #1a1714;
-  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8), 0 0 0 1px #a89f8e;
-}
-
-.switch-meter-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--meter, 0%);
-  background: linear-gradient(90deg, #4f9a3a, #e8c23a 60%, #e8483c);
-  background-size: 66px 100%;
-  transition: width 0.25s ease;
-}
-
-.switch-meter::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(90deg, transparent 0 5.6px, rgba(26, 23, 20, 0.85) 5.6px 6.6px);
-}
-
-.switch-meter.is-full .switch-meter-fill { box-shadow: 0 0 8px rgba(232, 72, 60, 0.9); }
-
-.switch-meter-value {
-  margin-top: -2px;
-  color: #3a332b;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
 .toggle-word {
   line-height: 1;
   color: #9a9184;
@@ -2131,10 +2093,6 @@ function gaugeLevel(state) {
   return level;
 }
 
-function lightRatio(state) {
-  return countLights(state) / maxLights();
-}
-
 function isStrained(state) {
   if (state.cut || breakerTrips(state)) return false;
   return countLights(state) === maxLights();
@@ -2227,7 +2185,6 @@ globalThis.LightsOut = {
   countLights,
   power,
   loadRatio,
-  lightRatio,
   isFullyOn,
   gaugeLevel,
   breakerTrips,
@@ -2250,7 +2207,6 @@ const {
   gaugeLevel,
   isAllOff,
   isStrained,
-  lightRatio,
   loadRatio,
   maxLights,
   power,
@@ -2851,9 +2807,6 @@ function switchPlate() {
   const amps = span("switch-amps");
   amps.textContent = `${BREAKER_AMPS}A`;
   rating.append(kind, amps, boltMark());
-  const meter = span("switch-meter");
-  meter.append(span("switch-meter-fill"));
-  const meterValue = span("switch-meter-value");
   const onLabel = span("toggle-word on");
   onLabel.textContent = "ON";
   const offLabel = span("toggle-word off");
@@ -2862,7 +2815,7 @@ function switchPlate() {
   well.append(span("switch-lever"));
   const test = span("switch-test");
   test.append(span("switch-test-button"));
-  plate.append(terminals(), rating, meter, meterValue, onLabel, well, offLabel, test, terminals());
+  plate.append(terminals(), rating, onLabel, well, offLabel, test, terminals());
   return plate;
 }
 
@@ -3083,12 +3036,7 @@ function paintSealedSwitch() {
   const toggle = scene.board.querySelector(".switch-case .toggle");
   if (!toggle) return;
   const off = state.cut || breakerTrips(state);
-  toggle.setAttribute("aria-pressed", off ? "false" : "true");
-  const percent = Math.round(lightRatio(state) * 100);
-  toggle.style.setProperty("--meter", `${percent}%`);
-  toggle.querySelector(".switch-meter").classList.toggle("is-full", percent >= 100);
-  toggle.querySelector(".switch-meter-value").textContent = `${percent}%`;
-}
+  toggle.setAttribute("aria-pressed", off ? "false" : "true");}
 
 function paintLeak(root, room, grid) {
   if (!room.front) return;

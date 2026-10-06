@@ -348,44 +348,6 @@ main {
   letter-spacing: 0.04em;
 }
 
-.switch-meter {
-  position: relative;
-  width: 66px;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: #1a1714;
-  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8), 0 0 0 1px #a89f8e;
-}
-
-.switch-meter-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--meter, 0%);
-  background: linear-gradient(90deg, #4f9a3a, #e8c23a 60%, #e8483c);
-  background-size: 66px 100%;
-  transition: width 0.25s ease;
-}
-
-.switch-meter::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(90deg, transparent 0 5.6px, rgba(26, 23, 20, 0.85) 5.6px 6.6px);
-}
-
-.switch-meter.is-full .switch-meter-fill { box-shadow: 0 0 8px rgba(232, 72, 60, 0.9); }
-
-.switch-meter-value {
-  margin-top: -2px;
-  color: #3a332b;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
 .toggle-word {
   line-height: 1;
   color: #9a9184;

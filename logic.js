@@ -200,10 +200,6 @@ function gaugeLevel(state) {
   return level;
 }
 
-function lightRatio(state) {
-  return countLights(state) / maxLights();
-}
-
 function isStrained(state) {
   if (state.cut || breakerTrips(state)) return false;
   return countLights(state) === maxLights();
@@ -296,7 +292,6 @@ globalThis.LightsOut = {
   countLights,
   power,
   loadRatio,
-  lightRatio,
   isFullyOn,
   gaugeLevel,
   breakerTrips,

@@ -9,7 +9,6 @@ const {
   gaugeLevel,
   isAllOff,
   isStrained,
-  lightRatio,
   loadRatio,
   maxLights,
   power,
@@ -610,9 +609,6 @@ function switchPlate() {
   const amps = span("switch-amps");
   amps.textContent = `${BREAKER_AMPS}A`;
   rating.append(kind, amps, boltMark());
-  const meter = span("switch-meter");
-  meter.append(span("switch-meter-fill"));
-  const meterValue = span("switch-meter-value");
   const onLabel = span("toggle-word on");
   onLabel.textContent = "ON";
   const offLabel = span("toggle-word off");
@@ -621,7 +617,7 @@ function switchPlate() {
   well.append(span("switch-lever"));
   const test = span("switch-test");
   test.append(span("switch-test-button"));
-  plate.append(terminals(), rating, meter, meterValue, onLabel, well, offLabel, test, terminals());
+  plate.append(terminals(), rating, onLabel, well, offLabel, test, terminals());
   return plate;
 }
 
@@ -842,12 +838,7 @@ function paintSealedSwitch() {
   const toggle = scene.board.querySelector(".switch-case .toggle");
   if (!toggle) return;
   const off = state.cut || breakerTrips(state);
-  toggle.setAttribute("aria-pressed", off ? "false" : "true");
-  const percent = Math.round(lightRatio(state) * 100);
-  toggle.style.setProperty("--meter", `${percent}%`);
-  toggle.querySelector(".switch-meter").classList.toggle("is-full", percent >= 100);
-  toggle.querySelector(".switch-meter-value").textContent = `${percent}%`;
-}
+  toggle.setAttribute("aria-pressed", off ? "false" : "true");}
 
 function paintLeak(root, room, grid) {
   if (!room.front) return;
