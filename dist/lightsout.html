@@ -1511,13 +1511,26 @@ h1 {
 #ending-line[hidden] { display: none; }
 
 .camera-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   margin: 4px 0 0;
   color: #ff8a7a;
   font-size: 14px;
   letter-spacing: 0.08em;
 }
 
-.camera-note[hidden] { display: none; }
+.camera-note p { margin: 0; }
+
+.camera-note .camera-blocked {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.camera-note[hidden],
+.camera-note .camera-blocked[hidden] { display: none; }
 
 .camera-feed {
   position: fixed;
@@ -1532,15 +1545,26 @@ h1 {
 #camera-reading {
   position: fixed;
   z-index: 10;
-  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
   bottom: max(16px, env(safe-area-inset-bottom));
+  max-width: calc(100vw - 150px);
   margin: 0;
   padding: 6px 10px;
   border: 1px dashed #c0392b;
   background: rgba(0, 0, 0, 0.6);
   color: #ff8a7a;
   font-size: 12px;
-  letter-spacing: 0.08em;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  white-space: pre-line;
+  text-align: left;
+  pointer-events: none;
+}
+
+#camera-reading.is-dark {
+  border-style: solid;
+  color: #9dffb0;
+  border-color: #3fae5a;
 }
 
 #camera-reading[hidden] { display: none; }
@@ -1766,7 +1790,11 @@ body.return-visit #ending-title { animation: rise 0.9s ease 1.1s both; }
         <button id="enter" class="metal" type="button">入室</button>
         <button id="continue" class="metal" type="button" hidden>つづきから</button>
         <button id="discard" class="quiet" type="button" hidden>最初から</button>
-        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+        <div class="camera-note" role="alert" hidden>
+          <p>カメラを許可して遊んでください。</p>
+          <button class="metal camera-retry" type="button">もう一度許可する</button>
+          <p class="camera-blocked" hidden>カメラがブロックされています。<br />アドレスバーの鍵マークからカメラを「許可」にして、もう一度押してください。</p>
+        </div>
       </div>
     </div>
 
@@ -1776,7 +1804,11 @@ body.return-visit #ending-title { animation: rise 0.9s ease 1.1s both; }
         <div class="eye ending-eye" hidden aria-hidden="true"></div>
         <p id="ending-line" class="lede ending-copy" hidden></p>
         <h1 id="ending-title" hidden>消灯成功</h1>
-        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+        <div class="camera-note" role="alert" hidden>
+          <p>カメラを許可して遊んでください。</p>
+          <button class="metal camera-retry" type="button">もう一度許可する</button>
+          <p class="camera-blocked" hidden>カメラがブロックされています。<br />アドレスバーの鍵マークからカメラを「許可」にして、もう一度押してください。</p>
+        </div>
         <button id="ending-reset" class="quiet" type="button">最初から</button>
       </div>
     </div>
@@ -2140,6 +2172,7 @@ const scene = {
   kanaEcho: document.querySelector("#kana-echo"),
   endingTitle: document.querySelector("#ending-title"),
   cameraNotes: document.querySelectorAll(".camera-note"),
+  cameraRetries: document.querySelectorAll(".camera-retry"),
   cameraReading: document.querySelector("#camera-reading"),
 };
 
@@ -2331,29 +2364,65 @@ scene.discard.addEventListener("click", () => {
 scene.enter.addEventListener("click", () => enterWithCamera(false));
 scene.continue.addEventListener("click", () => enterWithCamera(true));
 
+let enterFromSave = false;
+
 async function enterWithCamera(fromSave) {
+  enterFromSave = fromSave;
   audio.start();
-  scene.enter.disabled = true;
-  scene.continue.disabled = true;
+  setCameraButtonsDisabled(true);
   const allowed = await camera.open();
-  scene.enter.disabled = false;
-  scene.continue.disabled = false;
-  showCameraNote(!allowed);
-  if (allowed) begin(fromSave);
+  setCameraButtonsDisabled(false);
+  if (!allowed) {
+    await showCameraNote(true);
+    return;
+  }
+  showCameraNote(false);
+  begin(fromSave);
 }
 
-function showCameraNote(on) {
-  scene.cameraNotes.forEach((note) => { note.hidden = !on; });
+function setCameraButtonsDisabled(on) {
+  scene.enter.disabled = on;
+  scene.continue.disabled = on;
+  scene.cameraRetries.forEach((button) => { button.disabled = on; });
+}
+
+scene.cameraRetries.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (state.phase === "title") enterWithCamera(enterFromSave);
+    else watchForDark();
+  });
+});
+
+async function showCameraNote(on) {
+  const blocked = on && (await camera.isBlocked());
+  scene.cameraNotes.forEach((note) => {
+    note.hidden = !on;
+    note.querySelector(".camera-blocked").hidden = !blocked;
+  });
 }
 
 function watchForDark() {
   showCameraNote(false);
-  camera.watch(enterAfterDark, () => showCameraNote(true), DEBUG ? showCameraReading : null);
+  camera.watch(enterAfterDark, () => showCameraNote(true));
 }
 
-function showCameraReading({ mean, spread, dark }) {
-  scene.cameraReading.hidden = false;
-  scene.cameraReading.textContent = `明るさ ${mean.toFixed(0)} / ばらつき ${spread.toFixed(0)}${dark ? " 暗い" : ""}`;
+if (DEBUG) {
+  window.setInterval(() => {
+    const sample = camera.sample();
+    scene.cameraReading.hidden = false;
+    if (!sample) {
+      scene.cameraReading.textContent = "カメラ: 停止中";
+      return;
+    }
+    const { mean, spread, dark } = sample;
+    const { PITCH_BLACK, DIM, FLAT } = camera.limits;
+    scene.cameraReading.classList.toggle("is-dark", dark);
+    scene.cameraReading.textContent = [
+      `明るさ ${mean.toFixed(0)} / ばらつき ${spread.toFixed(0)}`,
+      `判定: ${dark ? "暗い（クリア対象）" : "明るい"}`,
+      `暗い条件: 明るさ<${PITCH_BLACK} または 明るさ<${DIM}かつばらつき<${FLAT}`,
+    ].join("\n");
+  }, 250);
 }
 
 document.addEventListener("keydown", (event) => {
@@ -2420,7 +2489,6 @@ function restorePraised() {
 function hardReset() {
   clearTimeout(tripTimer);
   camera.stopWatch();
-  scene.cameraReading.hidden = true;
   showCameraNote(false);
   localStorage.removeItem(KEY);
   markPraised(false);
@@ -2977,7 +3045,6 @@ function enterAfterDark(atOnce = false) {
   if (state.phase !== "ended" || !praised || returnVisit) return;
   darkFromStart = atOnce;
   camera.close();
-  scene.cameraReading.hidden = true;
   state = createState();
   state.phase = "ended";
   state.cut = true;
@@ -3052,9 +3119,22 @@ function createCamera() {
     return { mean, spread, dark: mean < PITCH_BLACK || (mean < DIM && spread < FLAT) };
   }
 
+  function sample() {
+    if (!live() || !video || video.readyState < 2) return null;
+    return measure();
+  }
+
   function isDark() {
-    if (!live() || !video || video.readyState < 2) return false;
-    return measure().dark;
+    return Boolean(sample()?.dark);
+  }
+
+  async function isBlocked() {
+    try {
+      const status = await navigator.permissions?.query({ name: "camera" });
+      return status?.state === "denied";
+    } catch {
+      return false;
+    }
   }
 
   function stopWatch() {
@@ -3063,7 +3143,7 @@ function createCamera() {
     timer = 0;
   }
 
-  async function watch(onDark, onFail, onSample) {
+  async function watch(onDark, onFail) {
     stopWatch();
     const mine = token;
     const ok = await open();
@@ -3075,9 +3155,7 @@ function createCamera() {
       if (!live()) { stopWatch(); onFail(); return; }
       if (!video || video.readyState < 2) return;
       const now = performance.now();
-      const sample = measure();
-      onSample?.(sample);
-      if (now - startedAt < WARMUP_MS || !sample.dark) {
+      if (now - startedAt < WARMUP_MS || !measure().dark) {
         darkSince = 0;
         return;
       }
@@ -3097,7 +3175,7 @@ function createCamera() {
     video = null;
   }
 
-  return { open, watch, isDark, stopWatch, close };
+  return { open, watch, sample, isDark, isBlocked, stopWatch, close, limits: { PITCH_BLACK, DIM, FLAT } };
 }
 
 function load() {

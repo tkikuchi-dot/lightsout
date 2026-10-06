@@ -49,6 +49,7 @@ const scene = {
   kanaEcho: document.querySelector("#kana-echo"),
   endingTitle: document.querySelector("#ending-title"),
   cameraNotes: document.querySelectorAll(".camera-note"),
+  cameraRetries: document.querySelectorAll(".camera-retry"),
   cameraReading: document.querySelector("#camera-reading"),
 };
 
@@ -240,29 +241,65 @@ scene.discard.addEventListener("click", () => {
 scene.enter.addEventListener("click", () => enterWithCamera(false));
 scene.continue.addEventListener("click", () => enterWithCamera(true));
 
+let enterFromSave = false;
+
 async function enterWithCamera(fromSave) {
+  enterFromSave = fromSave;
   audio.start();
-  scene.enter.disabled = true;
-  scene.continue.disabled = true;
+  setCameraButtonsDisabled(true);
   const allowed = await camera.open();
-  scene.enter.disabled = false;
-  scene.continue.disabled = false;
-  showCameraNote(!allowed);
-  if (allowed) begin(fromSave);
+  setCameraButtonsDisabled(false);
+  if (!allowed) {
+    await showCameraNote(true);
+    return;
+  }
+  showCameraNote(false);
+  begin(fromSave);
 }
 
-function showCameraNote(on) {
-  scene.cameraNotes.forEach((note) => { note.hidden = !on; });
+function setCameraButtonsDisabled(on) {
+  scene.enter.disabled = on;
+  scene.continue.disabled = on;
+  scene.cameraRetries.forEach((button) => { button.disabled = on; });
+}
+
+scene.cameraRetries.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (state.phase === "title") enterWithCamera(enterFromSave);
+    else watchForDark();
+  });
+});
+
+async function showCameraNote(on) {
+  const blocked = on && (await camera.isBlocked());
+  scene.cameraNotes.forEach((note) => {
+    note.hidden = !on;
+    note.querySelector(".camera-blocked").hidden = !blocked;
+  });
 }
 
 function watchForDark() {
   showCameraNote(false);
-  camera.watch(enterAfterDark, () => showCameraNote(true), DEBUG ? showCameraReading : null);
+  camera.watch(enterAfterDark, () => showCameraNote(true));
 }
 
-function showCameraReading({ mean, spread, dark }) {
-  scene.cameraReading.hidden = false;
-  scene.cameraReading.textContent = `明るさ ${mean.toFixed(0)} / ばらつき ${spread.toFixed(0)}${dark ? " 暗い" : ""}`;
+if (DEBUG) {
+  window.setInterval(() => {
+    const sample = camera.sample();
+    scene.cameraReading.hidden = false;
+    if (!sample) {
+      scene.cameraReading.textContent = "カメラ: 停止中";
+      return;
+    }
+    const { mean, spread, dark } = sample;
+    const { PITCH_BLACK, DIM, FLAT } = camera.limits;
+    scene.cameraReading.classList.toggle("is-dark", dark);
+    scene.cameraReading.textContent = [
+      `明るさ ${mean.toFixed(0)} / ばらつき ${spread.toFixed(0)}`,
+      `判定: ${dark ? "暗い（クリア対象）" : "明るい"}`,
+      `暗い条件: 明るさ<${PITCH_BLACK} または 明るさ<${DIM}かつばらつき<${FLAT}`,
+    ].join("\n");
+  }, 250);
 }
 
 document.addEventListener("keydown", (event) => {
@@ -329,7 +366,6 @@ function restorePraised() {
 function hardReset() {
   clearTimeout(tripTimer);
   camera.stopWatch();
-  scene.cameraReading.hidden = true;
   showCameraNote(false);
   localStorage.removeItem(KEY);
   markPraised(false);
@@ -886,7 +922,6 @@ function enterAfterDark(atOnce = false) {
   if (state.phase !== "ended" || !praised || returnVisit) return;
   darkFromStart = atOnce;
   camera.close();
-  scene.cameraReading.hidden = true;
   state = createState();
   state.phase = "ended";
   state.cut = true;
@@ -961,9 +996,22 @@ function createCamera() {
     return { mean, spread, dark: mean < PITCH_BLACK || (mean < DIM && spread < FLAT) };
   }
 
+  function sample() {
+    if (!live() || !video || video.readyState < 2) return null;
+    return measure();
+  }
+
   function isDark() {
-    if (!live() || !video || video.readyState < 2) return false;
-    return measure().dark;
+    return Boolean(sample()?.dark);
+  }
+
+  async function isBlocked() {
+    try {
+      const status = await navigator.permissions?.query({ name: "camera" });
+      return status?.state === "denied";
+    } catch {
+      return false;
+    }
   }
 
   function stopWatch() {
@@ -972,7 +1020,7 @@ function createCamera() {
     timer = 0;
   }
 
-  async function watch(onDark, onFail, onSample) {
+  async function watch(onDark, onFail) {
     stopWatch();
     const mine = token;
     const ok = await open();
@@ -984,9 +1032,7 @@ function createCamera() {
       if (!live()) { stopWatch(); onFail(); return; }
       if (!video || video.readyState < 2) return;
       const now = performance.now();
-      const sample = measure();
-      onSample?.(sample);
-      if (now - startedAt < WARMUP_MS || !sample.dark) {
+      if (now - startedAt < WARMUP_MS || !measure().dark) {
         darkSince = 0;
         return;
       }
@@ -1006,7 +1052,7 @@ function createCamera() {
     video = null;
   }
 
-  return { open, watch, isDark, stopWatch, close };
+  return { open, watch, sample, isDark, isBlocked, stopWatch, close, limits: { PITCH_BLACK, DIM, FLAT } };
 }
 
 function load() {

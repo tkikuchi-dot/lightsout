@@ -87,7 +87,11 @@
         <button id="enter" class="metal" type="button">入室</button>
         <button id="continue" class="metal" type="button" hidden>つづきから</button>
         <button id="discard" class="quiet" type="button" hidden>最初から</button>
-        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+        <div class="camera-note" role="alert" hidden>
+          <p>カメラを許可して遊んでください。</p>
+          <button class="metal camera-retry" type="button">もう一度許可する</button>
+          <p class="camera-blocked" hidden>カメラがブロックされています。<br />アドレスバーの鍵マークからカメラを「許可」にして、もう一度押してください。</p>
+        </div>
       </div>
     </div>
 
@@ -97,7 +101,11 @@
         <div class="eye ending-eye" hidden aria-hidden="true"></div>
         <p id="ending-line" class="lede ending-copy" hidden></p>
         <h1 id="ending-title" hidden>消灯成功</h1>
-        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+        <div class="camera-note" role="alert" hidden>
+          <p>カメラを許可して遊んでください。</p>
+          <button class="metal camera-retry" type="button">もう一度許可する</button>
+          <p class="camera-blocked" hidden>カメラがブロックされています。<br />アドレスバーの鍵マークからカメラを「許可」にして、もう一度押してください。</p>
+        </div>
         <button id="ending-reset" class="quiet" type="button">最初から</button>
       </div>
     </div>

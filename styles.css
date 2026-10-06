@@ -1499,13 +1499,26 @@ h1 {
 #ending-line[hidden] { display: none; }
 
 .camera-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   margin: 4px 0 0;
   color: #ff8a7a;
   font-size: 14px;
   letter-spacing: 0.08em;
 }
 
-.camera-note[hidden] { display: none; }
+.camera-note p { margin: 0; }
+
+.camera-note .camera-blocked {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.camera-note[hidden],
+.camera-note .camera-blocked[hidden] { display: none; }
 
 .camera-feed {
   position: fixed;
@@ -1520,15 +1533,26 @@ h1 {
 #camera-reading {
   position: fixed;
   z-index: 10;
-  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
   bottom: max(16px, env(safe-area-inset-bottom));
+  max-width: calc(100vw - 150px);
   margin: 0;
   padding: 6px 10px;
   border: 1px dashed #c0392b;
   background: rgba(0, 0, 0, 0.6);
   color: #ff8a7a;
   font-size: 12px;
-  letter-spacing: 0.08em;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  white-space: pre-line;
+  text-align: left;
+  pointer-events: none;
+}
+
+#camera-reading.is-dark {
+  border-style: solid;
+  color: #9dffb0;
+  border-color: #3fae5a;
 }
 
 #camera-reading[hidden] { display: none; }
