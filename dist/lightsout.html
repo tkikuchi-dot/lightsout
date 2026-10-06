@@ -1,0 +1,3313 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#090807" />
+    <title>消灯</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffc56b'/%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23ffc56b' stroke-opacity='.45'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&family=Shippori+Mincho:wght@500;600&display=swap" rel="stylesheet" />
+    <style>
+:root {
+  color-scheme: dark;
+  --ink: #e7dccb;
+  --muted: #cbbba6;
+  --brass: #e6d3b0;
+  --metal: #2a2118;
+  --plate-top: #3c362f;
+  --plate-bottom: #221e19;
+  --line: #5a5146;
+  --danger: #c4452f;
+  --bulb: 76px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: #090807;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+
+html:has(body.phase-dark),
+html:has(body.phase-ended) { background: #000; }
+
+body {
+  --load: 0;
+  margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+  color: var(--ink);
+  font-family: "IBM Plex Sans JP", "Yu Gothic", "Hiragino Sans", sans-serif;
+  font-weight: 300;
+  background:
+    radial-gradient(ellipse at 50% 20%, #2a241c 0%, #14110e 52%, #090807 100%);
+  user-select: none;
+}
+
+body.phase-dark,
+body.phase-ended {
+  background: #000;
+  cursor: default;
+}
+
+button,
+input { touch-action: manipulation; font-family: inherit; }
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 1px solid var(--brass);
+  outline-offset: 3px;
+}
+
+body.phase-dark :focus-visible { outline: none; }
+
+::selection { background: #a68456; color: #1a120c; }
+
+#veil {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: transparent;
+}
+
+#scene {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body.phase-title #scene,
+body.phase-dark #scene,
+body.phase-ended #scene,
+body.phase-title #veil,
+body.phase-dark #veil,
+body.phase-ended #veil { display: none; }
+
+.topbar {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  width: min(920px, 100%);
+  margin: 0 auto;
+  padding: 22px 28px 0;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-name {
+  font-family: "Shippori Mincho", "Yu Mincho", serif;
+  font-size: 22px;
+  letter-spacing: 0.18em;
+}
+
+.kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.42em;
+  color: #b9a48a;
+}
+
+.rooms {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rooms button,
+#settings-open {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(231, 220, 203, 0.28);
+  letter-spacing: 0.16em;
+  font-size: 13px;
+  font-weight: 300;
+  padding: 8px 14px;
+}
+
+.rooms button[aria-current="true"] {
+  border-color: var(--brass);
+  color: #f6ecdf;
+}
+
+.rooms button.is-locked { opacity: 0.38; }
+
+.rooms button.is-deny { animation: deny 0.28s ease; }
+
+@keyframes deny {
+  25% { translate: -2px 0; }
+  75% { translate: 2px 0; }
+}
+
+main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 18px 20px 120px;
+}
+
+.panel-wrap {
+  width: min(100%, 480px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.plate {
+  position: relative;
+  background:
+    radial-gradient(circle at 12px 12px, #8d8478 1.4px, #3a342c 2.4px, transparent 3.2px),
+    radial-gradient(circle at calc(100% - 12px) 12px, #8d8478 1.4px, #3a342c 2.4px, transparent 3.2px),
+    radial-gradient(circle at 12px calc(100% - 12px), #8d8478 1.4px, #3a342c 2.4px, transparent 3.2px),
+    radial-gradient(circle at calc(100% - 12px) calc(100% - 12px), #8d8478 1.4px, #3a342c 2.4px, transparent 3.2px),
+    linear-gradient(180deg, var(--plate-top), var(--plate-bottom));
+  border: 1px solid #6a6054;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 210, 0.16),
+    0 18px 40px rgba(0, 0, 0, 0.35);
+  padding: 22px 22px 18px;
+}
+
+#board { z-index: 1; }
+
+.board-pane {
+  width: 100%;
+}
+
+.screen-slide {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.screen-track {
+  display: flex;
+  width: 200%;
+  height: 100%;
+}
+
+.screen-page {
+  position: relative;
+  flex: 0 0 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 20%, #2a241c 0%, #14110e 52%, #090807 100%);
+}
+
+.screen-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.screen-track.to-next { animation: screen-next 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.screen-track.to-prev { animation: screen-prev 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+
+@keyframes screen-next {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes screen-prev {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+.nameplate {
+  text-align: center;
+  letter-spacing: 0.2em;
+  font-size: 13px;
+  color: var(--brass);
+  margin-bottom: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--bulb));
+  gap: 14px 16px;
+  justify-content: center;
+}
+
+#board[data-room="0"],
+#board[data-room="1"],
+#board[data-room="3"],
+.board-pane[data-room="0"],
+.board-pane[data-room="1"],
+.board-pane[data-room="3"] { --bulb: 78px; }
+
+.cell.is-front {
+  z-index: 2;
+  scale: 1.14;
+}
+
+.leak {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: calc(var(--bulb) / 2);
+  width: calc(var(--bulb) * 2);
+  height: calc(var(--bulb) * 2);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 226, 160, 0.95) 46%,
+    rgba(255, 168, 64, 0.6) 58%,
+    rgba(255, 110, 24, 0.18) 78%,
+    rgba(255, 110, 24, 0) 100%
+  );
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.leak.on { opacity: 1; }
+
+.toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  letter-spacing: 0.22em;
+  font-size: 12px;
+}
+
+.switch-plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 92px;
+  padding: 12px 0 14px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #4a433b, #2c2822 42%, #1c1916);
+  border: 1px solid #6a6054;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 210, 0.18),
+    0 10px 18px rgba(0, 0, 0, 0.35);
+}
+
+.switch-screw {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f3e6d2, #6a6156 55%, #241f1a);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.toggle-word { line-height: 1; }
+.toggle[aria-pressed="true"] .toggle-word.on,
+.toggle[aria-pressed="false"] .toggle-word.off { color: #fff1d4; }
+
+.switch-well {
+  position: relative;
+  width: 30px;
+  height: 62px;
+  border-radius: 3px;
+  background: #100e0c;
+  box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.75), inset 0 0 0 1px #2a261f;
+}
+
+.switch-lever {
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  width: 22px;
+  height: 32px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #7a6748, #f6ecdf 46%, #b9a48a);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 3px 0 #2a2118;
+  transition: top 0.08s ease;
+}
+
+.toggle[aria-pressed="false"] .switch-lever { top: 27px; }
+
+.toggle:active .switch-lever { filter: brightness(0.92); }
+
+.kana-row {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+  align-items: end;
+}
+
+.kana-row .cell { width: 100%; }
+
+.kana {
+  font-family: "Shippori Mincho", serif;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--brass);
+}
+
+.kana-row .bulb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.cell.is-quiet { cursor: default; }
+.cell.is-quiet:active .bulb { scale: 1; }
+
+.glass-cap {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: -12px;
+  width: calc(var(--bulb) + 26px);
+  height: calc(var(--bulb) + 30px);
+  transform: translateX(-50%);
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  background: linear-gradient(122deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.12) 16%, rgba(255, 255, 255, 0) 40%);
+  box-shadow:
+    inset 0 0 0 8px rgba(236, 224, 204, 0.82),
+    inset 0 0 0 10px rgba(74, 67, 59, 0.95),
+    0 10px 18px rgba(0, 0, 0, 0.4);
+}
+
+.glass-cap::after {
+  content: "";
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  left: var(--mx, 28%);
+  top: var(--my, 18%);
+  translate: -50% -50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 68%);
+}
+
+.glass-cap .sheen { width: 36%; }
+
+.glass-cap.is-tapped {
+  box-shadow:
+    inset 0 0 0 8px rgba(236, 224, 204, 0.82),
+    inset 0 0 0 10px rgba(74, 67, 59, 0.95),
+    0 0 22px rgba(255, 255, 255, 0.55);
+}
+
+.cell {
+  position: relative;
+  z-index: 1;
+  width: var(--bulb);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+
+.cell:active .bulb { scale: 0.96; }
+
+.bulb {
+  z-index: 1;
+  width: var(--bulb);
+  height: var(--bulb);
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle at 50% 58%, #2c261f 0%, #12100e 72%);
+  box-shadow:
+    inset 0 8px 12px rgba(255, 255, 255, 0.05),
+    inset 0 -12px 16px rgba(0, 0, 0, 0.65),
+    0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: background 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.bulb::before {
+  content: "";
+  position: absolute;
+  width: 30%;
+  height: 16%;
+  left: 22%;
+  top: 16%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  transform: rotate(-18deg);
+}
+
+.bulb.on {
+  animation: filament 1.8s ease-in-out infinite;
+  background: radial-gradient(circle at 50% 42%, #fff6d8 0%, #ffc45a 30%, #e07a1a 64%, #6d320c 100%);
+  box-shadow:
+    0 0 12px 2px rgba(255, 186, 80, 0.9),
+    0 0 34px 8px rgba(255, 140, 40, 0.42),
+    0 0 80px 18px rgba(255, 100, 20, 0.16),
+    inset 0 -8px 12px rgba(120, 40, 0, 0.25);
+}
+
+.bulb.on::after {
+  content: "";
+  position: absolute;
+  width: 26%;
+  height: 26%;
+  left: 37%;
+  top: 34%;
+  border-radius: 50%;
+  background: white;
+  filter: blur(1px);
+}
+
+.socket {
+  position: relative;
+  z-index: 1;
+  width: 42%;
+  height: 9px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(#6a6156, #2a261f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.chamber {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0;
+}
+
+.rear {
+  display: none;
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  left: 50%;
+  flex-direction: column;
+  align-items: center;
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.drop-lead {
+  width: 4px;
+  height: 40px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #161310, #6a6156 46%, #241f1a);
+  pointer-events: none;
+}
+
+.breaker-art.live + .drop-lead {
+  background: linear-gradient(90deg, #7a3d12, #ffd08a 46%, #c56a28);
+  box-shadow: 0 0 calc(6px + var(--load) * 10px) rgba(255, 120, 30, calc(0.3 + var(--load) * 0.7));
+}
+
+.vault {
+  position: relative;
+  z-index: 1;
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.glass {
+  position: relative;
+  width: min(250px, 72vw);
+  height: 300px;
+  cursor: default;
+  background: radial-gradient(circle at 50% 38%, rgba(255, 170, 60, 0.42), transparent 48%);
+}
+
+.bulb.sealed {
+  --bulb: 96px;
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 38%;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+.bulb.sealed.on {
+  box-shadow:
+    0 0 16px 4px rgba(255, 214, 140, 1),
+    0 0 48px 14px rgba(255, 150, 40, 0.85),
+    0 0 110px 28px rgba(255, 110, 20, 0.4);
+}
+
+.pedestal {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  right: 18px;
+  bottom: 0;
+  height: 18px;
+  background: linear-gradient(#7a7164, #2c2822);
+  border: 1px solid #a89880;
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.glass-face {
+  position: absolute;
+  z-index: 3;
+  inset: 0 0 18px;
+  overflow: hidden;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  background:
+    linear-gradient(112deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 26%, rgba(255, 255, 255, 0) 100%);
+  box-shadow:
+    inset 0 0 0 8px rgba(232, 216, 190, 0.38),
+    0 16px 28px rgba(0, 0, 0, 0.32);
+}
+
+.glass-face::after {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  left: var(--mx, 24%);
+  top: var(--my, 16%);
+  translate: -50% -50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 70%);
+}
+
+.sheen {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  width: 28%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0));
+  animation: sheen 7.5s ease-in-out infinite;
+}
+
+@keyframes sheen {
+  0% { transform: translateX(-80%); }
+  50% { transform: translateX(220%); }
+  100% { transform: translateX(220%); }
+}
+
+.glass.is-tapped .glass-face {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 24px rgba(255, 255, 255, 0.16);
+}
+
+.vault-label {
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.18em;
+  line-height: 1.9;
+  font-size: 12px;
+  color: var(--brass);
+  white-space: pre-line;
+}
+
+.cord {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  bottom: -16px;
+  width: 4px;
+  height: 34px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #161310 0%, #6a6156 46%, #241f1a 100%);
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.45);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.cell[aria-pressed="true"] .cord,
+.cord.live {
+  background: linear-gradient(90deg, #7a3d12 0%, #ffd08a 46%, #c56a28 100%);
+  box-shadow:
+    0 0 6px rgba(255, 176, 70, 0.9),
+    0 0 calc(6px + var(--load) * 14px) rgba(255, 110, 24, calc(0.2 + var(--load) * 0.75));
+  animation: shiver calc(0.22s - var(--load) * 0.12s) linear infinite;
+}
+
+.cord.sealed-lead {
+  z-index: 2;
+  bottom: -24px;
+  height: 42px;
+}
+
+.harness {
+  position: relative;
+  height: 20px;
+  margin: 8px 8px 0;
+}
+
+.bus {
+  position: absolute;
+  left: 8%;
+  right: 0;
+  top: 6px;
+  height: 7px;
+  border-radius: 4px 0 0 4px;
+  background: linear-gradient(#4a433c, #1a1714);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 calc(var(--load) * 16px) rgba(255, 140, 40, calc(var(--load) * 0.9));
+}
+
+.grommet {
+  position: absolute;
+  right: -30px;
+  top: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 186, 90, calc(var(--load) * 0.85)) 0 3px, #120f0c 4px, #6d6458 6px, #241f1a 8px);
+  box-shadow: 0 0 calc(var(--load) * 12px) rgba(255, 150, 40, calc(var(--load) * 0.8));
+}
+
+.switch-case .switch-plate {
+  position: relative;
+}
+
+.switch-case .bolt {
+  position: absolute;
+  top: 13px;
+  right: 8px;
+  width: 11px;
+  height: 16px;
+  fill: #e6d3b0;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+
+.switch-case {
+  position: fixed;
+  z-index: 3;
+  cursor: default;
+}
+
+.switch-case .toggle { pointer-events: none; }
+.switch-case .switch-lever {
+  background: linear-gradient(90deg, #6e1410, #e8483c 46%, #a3211a);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 200, 190, 0.45),
+    0 3px 0 #2a0c0a;
+  transition: top 0.22s ease;
+}
+
+.switch-case .glass-cap {
+  top: -12px;
+  width: 124px;
+  height: calc(100% + 24px);
+}
+
+.trunk {
+  position: relative;
+  height: 22px;
+  margin: 12px 8px 0;
+}
+
+.trunk .bus,
+.trunk.ends .bus {
+  position: fixed;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  width: auto;
+  border-radius: 0;
+  pointer-events: none;
+}
+
+.switch-case .riser {
+  z-index: 5;
+  left: 50%;
+  right: auto;
+  bottom: -22px;
+  height: 34px;
+  transform: translateX(-50%);
+}
+
+.riser {
+  position: absolute;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #161310, #6a6156 46%, #241f1a);
+  pointer-events: none;
+}
+
+.trunk.live .bus,
+.trunk.live .riser,
+.riser.live {
+  background: linear-gradient(#7a3d12, #ffd08a 46%, #c56a28);
+  box-shadow: 0 0 6px rgba(255, 176, 70, 0.9);
+}
+
+body.strain .cell[aria-pressed="true"] .cord,
+body.strain .cord.live {
+  animation-duration: 0.05s;
+}
+
+body.strain .cell[aria-pressed="true"] .cord::after,
+body.strain .cord.live::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 35%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff6df;
+  box-shadow: 0 0 8px #ffb15a;
+  opacity: 0;
+  animation: spark 0.42s steps(2) infinite;
+}
+
+.cell:nth-child(3n) .cord::after { animation-delay: 0.14s; }
+.cell:nth-child(4n) .cord::after { animation-delay: 0.27s; }
+
+@keyframes shiver {
+  50% { transform: translateX(calc(-50% + 1.5px)); }
+}
+
+@keyframes spark {
+  0%, 72% { opacity: 0; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes filament {
+  50% { filter: brightness(1.12); }
+}
+
+#rule {
+  position: relative;
+  z-index: 5;
+  min-height: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.85;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+#reset-room {
+  position: fixed;
+  z-index: 9;
+  top: calc(max(16px, env(safe-area-inset-top)) + 40px);
+  left: max(16px, env(safe-area-inset-left));
+  margin: 0;
+  padding: 8px 2px;
+  text-align: left;
+}
+
+body.phase-title #reset-room,
+body.phase-dark #reset-room,
+body.phase-ended #reset-room,
+body.phase-tripping #reset-room {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#undo {
+  position: fixed;
+  z-index: 9;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  padding: 8px 2px;
+  background: none;
+  border: 0;
+  color: #b5a690;
+  letter-spacing: 0.16em;
+  font-size: 13px;
+  font-weight: 300;
+}
+
+#undo:hover:not(:disabled) { color: #f3e6d2; }
+
+#kana-echo {
+  position: fixed;
+  z-index: 4;
+  left: 50%;
+  bottom: calc(max(28px, env(safe-area-inset-bottom)) + 64px);
+  margin: 0;
+  transform: translateX(-50%);
+  color: #f3e6d2;
+  font-family: "Shippori Mincho", "Yu Mincho", serif;
+  font-size: 40px;
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(255, 186, 80, 0.55);
+  pointer-events: none;
+}
+
+#kana-echo.is-shown { animation: kana-pop 0.24s ease-out; }
+
+@keyframes kana-pop {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+#debug-all-on {
+  position: fixed;
+  z-index: 9;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  padding: 8px 12px;
+  border: 1px dashed #c0392b;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ff8a7a;
+  letter-spacing: 0.16em;
+  font-size: 12px;
+}
+
+#debug-all-on[hidden],
+body:not(.phase-play) #debug-all-on { display: none; }
+
+#undo:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+body.phase-title #undo,
+body.phase-ended #undo {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.phase-dark #undo {
+  color: #e7dccb;
+  cursor: pointer;
+}
+
+body.phase-dark #undo:disabled { cursor: default; }
+
+#clear-btn {
+  position: fixed;
+  z-index: 4;
+  left: 50%;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: 168px;
+  height: 52px;
+  padding: 0;
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+  letter-spacing: 0.22em;
+  font-family: "Shippori Mincho", "Yu Mincho", serif;
+  font-size: 16px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  cursor: default;
+}
+
+#clear-btn.ready {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  color: var(--metal);
+  border-color: #f3e7d4;
+  background: linear-gradient(#efe2cf, #c9b394);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  animation: appear 0.4s ease;
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+body.phase-dark #clear-btn {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  background: #000;
+  color: #000;
+  border-color: #000;
+  box-shadow: none;
+  animation: none;
+  transition: none;
+}
+
+body.phase-dark #flash,
+body.phase-ended #flash,
+body.phase-play #flash {
+  opacity: 0;
+  animation: none;
+  background: #000;
+}
+
+body.phase-title #clear-btn,
+body.phase-ended #clear-btn,
+body.phase-tripping #clear-btn {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.phase-ended #clear-btn.ready {
+  z-index: 9;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  color: var(--metal);
+  border-color: #f3e7d4;
+  background: linear-gradient(#efe2cf, #c9b394);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.metal {
+  min-width: 168px;
+  height: 52px;
+  padding: 0 22px;
+  border: 1px solid #f3e7d4;
+  background: linear-gradient(#efe2cf, #c9b394);
+  color: var(--metal);
+  letter-spacing: 0.22em;
+  font-family: "Shippori Mincho", "Yu Mincho", serif;
+  font-size: 16px;
+}
+
+.metal:hover,
+#clear-btn.ready:hover,
+#settings-open:hover,
+.rooms button:hover { filter: brightness(1.06); }
+
+.quiet {
+  background: none;
+  border: 0;
+  color: #b5a690;
+  letter-spacing: 0.16em;
+  font-size: 13px;
+  font-weight: 300;
+  padding: 8px;
+}
+
+.quiet:hover { color: #f3e6d2; }
+
+#settings {
+  position: fixed;
+  z-index: 6;
+  top: 68px;
+  right: 22px;
+  width: min(300px, calc(100vw - 24px));
+  padding: 16px 16px 10px;
+  background: #16130f;
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+}
+
+body.phase-title #settings,
+body.phase-dark #settings,
+body.phase-ended #settings,
+body.phase-tripping #settings { display: none !important; }
+
+.settings-title {
+  margin: 0 0 14px;
+  letter-spacing: 0.22em;
+  font-size: 13px;
+}
+
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.slider-block {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.slider-block:last-of-type { margin-bottom: 0; }
+
+.breaker-art {
+  display: flex;
+  justify-content: center;
+}
+
+.glass.breaker-glass {
+  width: 112px;
+  height: 132px;
+  flex: none;
+  background: none;
+  pointer-events: auto;
+  cursor: default;
+}
+
+.breaker-art.live .breaker-glass {
+  background: radial-gradient(circle at 50% 48%, rgba(255, 170, 60, calc(0.12 + var(--load) * 0.34)), rgba(255, 170, 60, 0) 64%);
+}
+
+.breaker-glass .glass-face {
+  inset: 0 0 10px;
+}
+
+.breaker-glass .pedestal {
+  left: 8px;
+  right: 8px;
+  height: 10px;
+}
+
+.breaker-glass .breaker-box {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 46%;
+  translate: -50% -50%;
+}
+
+.breaker-box {
+  position: relative;
+  width: 74px;
+  height: 88px;
+  flex: none;
+  border: 1px solid #cbbba4;
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(255, 236, 210, 0.1), rgba(255, 236, 210, 0) 22%),
+    linear-gradient(180deg, #4a433c 0%, #241f1a 42%, #100e0c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 236, 210, 0.28);
+}
+
+.breaker-art.live .breaker-box {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 236, 210, 0.28),
+    0 0 calc(8px + var(--load) * 16px) rgba(255, 150, 40, calc(0.25 + var(--load) * 0.7));
+}
+
+.mark,
+.pos {
+  font-family: "Shippori Mincho", "Yu Mincho", serif;
+  line-height: 1;
+}
+
+.mark {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
+  color: #f3e6d2;
+}
+
+.gauge {
+  position: absolute;
+  left: 5px;
+  top: 28px;
+  bottom: 12px;
+  width: 5px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+}
+
+.gauge .seg {
+  flex: 1;
+  border-radius: 1px;
+  background: #2c2822;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.gauge .seg.is-lit {
+  background: linear-gradient(#fff6d2, #e07a1a);
+  box-shadow: 0 0 6px rgba(255, 160, 50, 0.95);
+}
+
+.pos {
+  position: absolute;
+  right: 10px;
+  font-size: 12px;
+  color: #6a6156;
+}
+
+.pos.on { top: 30px; right: 8px; }
+.pos.off { right: 8px; bottom: 16px; }
+
+.breaker-art.live .pos.on {
+  color: #fff6df;
+  text-shadow: 0 0 8px rgba(255, 176, 70, 0.95);
+}
+
+.jaw {
+  position: absolute;
+  left: 46px;
+  top: 34px;
+  width: 16px;
+  height: 5px;
+  border-radius: 1px;
+  background: linear-gradient(#8a8378, #2a2622);
+}
+
+.breaker-art.live .jaw {
+  background: linear-gradient(#fff6d8, #e07a1a);
+  box-shadow: 0 0 8px rgba(255, 176, 70, 0.95);
+}
+
+.arc {
+  position: absolute;
+  left: 42px;
+  top: 26px;
+  width: 24px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 250, 236, 0.95), rgba(255, 176, 70, 0.45) 42%, rgba(255, 120, 20, 0) 72%);
+  opacity: 0;
+}
+
+.breaker-art.live .arc { opacity: 1; }
+
+.lever {
+  position: absolute;
+  z-index: 1;
+  left: 30px;
+  bottom: 24px;
+  width: 4px;
+  height: 48px;
+  transform-origin: 50% 100%;
+  transform: rotate(54deg);
+  border-radius: 1px;
+  background: linear-gradient(90deg, #6a4a28, #f6e7c8 55%, #8a6234);
+  transition: transform 0.28s ease;
+}
+
+.lever::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -2px;
+  width: 8px;
+  height: 3px;
+  border-radius: 1px;
+  background: #cbbba4;
+}
+
+.breaker-art.live .lever {
+  transform: rotate(16deg);
+  box-shadow: 0 0 8px rgba(255, 170, 60, 0.7);
+}
+
+.breaker-art.live .lever::after {
+  background: #fff1c4;
+  box-shadow: 0 0 6px rgba(255, 196, 90, 0.95);
+}
+
+.pivot {
+  position: absolute;
+  z-index: 2;
+  left: 27px;
+  bottom: 20px;
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+  background: linear-gradient(135deg, #f3e6d2, #6e675e 46%, #241f1a);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+body.strain .breaker-art.live .lever { animation: shiver-lever 0.06s linear infinite; }
+body.strain .breaker-art.live .arc { animation: arc-flicker 0.18s steps(2) infinite; }
+
+@keyframes shiver-lever {
+  50% { transform: rotate(20deg); }
+}
+
+@keyframes arc-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.slider-head span {
+  font-variant-numeric: tabular-nums;
+  color: var(--brass);
+}
+
+.slider-head span.is-max { color: #fff1d4; }
+
+.slider-line {
+  position: relative;
+  margin-top: 8px;
+}
+
+.slider-line::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  top: 50%;
+  width: var(--p, 0%);
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  background-color: #ffb15a;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 214, 150, 0) 0 10px,
+    rgba(255, 246, 216, 0.45) 28px,
+    #fff8e6 42px,
+    rgba(255, 246, 216, 0.45) 56px,
+    rgba(255, 214, 150, 0) 74px,
+    rgba(255, 214, 150, 0) 108px
+  );
+  animation: gauge-current 0.7s linear infinite;
+  box-shadow:
+    0 0 6px rgba(255, 214, 150, 0.95),
+    0 0 14px rgba(255, 140, 40, 0.85);
+  pointer-events: none;
+}
+
+@keyframes gauge-current {
+  from { background-position: 0 0; }
+  to { background-position: 108px 0; }
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(224, 122, 26, 0) var(--p, 0%), #5c5348 var(--p, 0%));
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff6e4;
+  border: 0;
+  box-shadow:
+    0 0 0 1px #6a5c48,
+    0 0 8px rgba(255, 176, 70, 0.95);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff6e4;
+  border: 0;
+  box-shadow:
+    0 0 0 1px #6a5c48,
+    0 0 8px rgba(255, 176, 70, 0.95);
+}
+
+#flash {
+  position: fixed;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  background: #fff8ee;
+  opacity: 0;
+}
+
+body.phase-tripping #flash { animation: arc 0.78s linear forwards; }
+
+@keyframes arc {
+  0% { opacity: 0; }
+  8% { opacity: 0.95; }
+  16% { opacity: 0; }
+  30% { opacity: 0.55; }
+  42% { opacity: 0.02; }
+  68% { opacity: 0.22; }
+  100% { opacity: 0; }
+}
+
+body.strain .bulb.on { animation: flicker 0.16s infinite; }
+
+body.phase-tripping .bulb.on { animation: flicker 0.08s infinite; }
+
+@keyframes flicker {
+  0%, 100% { filter: brightness(1); }
+  35% { filter: brightness(0.45); }
+  55% { filter: brightness(1.15); }
+  75% { filter: brightness(0.2); }
+}
+
+#title,
+#ending {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: none;
+  place-items: center;
+  text-align: center;
+  padding: 32px 20px;
+}
+
+body.phase-title #title { display: grid; }
+
+body.phase-ended #ending { display: grid; }
+
+#title { background: #000; }
+
+#ending { background: #000; }
+
+#ending-thanked-reset {
+  position: fixed;
+  z-index: 9;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  padding: 8px 2px;
+}
+
+#ending-thanked-reset[hidden] { display: none; }
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 34rem;
+}
+
+h1 {
+  margin: 0;
+  font-family: "Shippori Mincho", "Yu Mincho", serif;
+  font-weight: 500;
+  font-size: clamp(52px, 9vw, 80px);
+  letter-spacing: 0.2em;
+  text-indent: 0.2em;
+}
+
+.lede {
+  margin: 0 0 8px;
+  max-width: 26em;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 2;
+  letter-spacing: 0.06em;
+}
+
+.rules {
+  margin: 0 0 8px;
+  max-width: 30em;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.9;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.rules p { margin: 0; }
+
+.rules .rules-title {
+  margin-bottom: 4px;
+  color: #e7dccb;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+.title-gaze {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.eye {
+  position: relative;
+  grid-column: 2;
+  width: 120px;
+  height: 120px;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
+}
+
+.eye-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.eye-lid-shut {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  transform: scaleY(0);
+  transform-origin: 50% 0%;
+  animation: eye-blink 6.8s infinite;
+}
+
+@keyframes eye-blink {
+  0%, 92% { transform: scaleY(0); animation-timing-function: cubic-bezier(0.5, 0, 1, 1); }
+  93.2% { transform: scaleY(1); }
+  94% { transform: scaleY(1); animation-timing-function: cubic-bezier(0, 0, 0.4, 1); }
+  96.5%, 100% { transform: scaleY(0); }
+}
+
+.eye-say {
+  position: relative;
+  grid-column: 3;
+  justify-self: start;
+  align-self: center;
+  margin: 0 0 0 12px;
+  padding: 10px 16px 11px;
+  border-radius: 18px;
+  background: #f4eadc;
+  color: #2c241c;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+}
+
+.eye-say::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 7px 8px 7px 0;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0) #f4eadc rgba(0, 0, 0, 0) rgba(0, 0, 0, 0);
+}
+
+.ending-copy { animation: rise 0.9s ease 0.25s both; }
+
+#ending-line[hidden] { display: none; }
+
+.camera-note {
+  margin: 4px 0 0;
+  color: #ff8a7a;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.camera-note[hidden] { display: none; }
+
+.camera-feed {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 2px;
+  height: 2px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#camera-reading {
+  position: fixed;
+  z-index: 10;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px dashed #c0392b;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ff8a7a;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+#camera-reading[hidden] { display: none; }
+
+#ending .ending-eye[hidden] { display: none; }
+
+#ending .ending-eye:not([hidden]) { animation: rise 0.9s ease 0.15s both; }
+
+body.return-visit #ending .ending-eye,
+body.return-visit #ending-reset { display: none; }
+
+#ending-title[hidden] { display: none; }
+
+body.return-visit #ending-title { animation: rise 0.9s ease 1.1s both; }
+
+#ending .quiet { animation: rise 0.9s ease 0.55s both; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.noscript {
+  position: fixed;
+  inset: auto 16px 16px;
+  z-index: 9;
+  margin: 0;
+  text-align: center;
+}
+
+@media (max-width: 1160px) {
+  .topbar { padding-left: 150px; }
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand settings"
+      "rooms rooms";
+    gap: 10px 12px;
+    padding: 108px 12px 0;
+  }
+
+  .brand { grid-area: brand; margin-left: 0; }
+  .brand-name { font-size: 18px; }
+  .rooms {
+    grid-area: rooms;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  #settings-open { grid-area: settings; justify-self: end; }
+
+  .rooms button,
+  #settings-open {
+    min-height: 44px;
+    padding: 8px 10px;
+    letter-spacing: 0.06em;
+  }
+
+  #undo {
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    min-height: 44px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  #reset-room {
+    top: calc(max(10px, env(safe-area-inset-top)) + 48px);
+    left: max(10px, env(safe-area-inset-left));
+    min-height: 44px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  main {
+    align-items: flex-start;
+    padding: 12px 8px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .plate { padding: 16px 8px 14px; }
+
+  #board[data-room="0"],
+  #board[data-room="1"],
+  #board[data-room="3"],
+  .board-pane[data-room="0"],
+  .board-pane[data-room="1"],
+  .board-pane[data-room="3"] { --bulb: min(64px, calc((100vw - 88px) / 3)); }
+
+  .grid { gap: 10px 12px; }
+
+  .kana-row { gap: 4px; }
+  .kana-row .cell { min-width: 0; }
+  .kana {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  #settings {
+    top: 120px;
+    right: 12px;
+    bottom: auto;
+    left: 12px;
+    width: auto;
+    max-height: calc(100dvh - 148px - env(safe-area-inset-bottom));
+    overflow: auto;
+  }
+
+  #title,
+  #ending {
+    padding: 20px 16px;
+    overflow: auto;
+  }
+
+  .sheet { gap: 12px; }
+  .lede { font-size: 14px; line-height: 1.7; }
+  .eye { width: 96px; height: 96px; }
+  .eye-say { margin-left: 10px; }
+  .eye-say {
+    padding: 8px 12px 9px;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+  }
+}
+
+@media (max-height: 760px) {
+  #board[data-room="0"],
+  #board[data-room="1"],
+  #board[data-room="3"],
+  .board-pane[data-room="0"],
+  .board-pane[data-room="1"],
+  .board-pane[data-room="3"] { --bulb: 62px; }
+  .glass { height: 240px; }
+  h1 { font-size: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+</style>
+  </head>
+  <body class="phase-title">
+    <div id="veil" aria-hidden="true"></div>
+    <div id="scene">
+      <header class="topbar">
+        <div class="brand">
+          <span class="kicker">B3</span>
+          <span class="brand-name">消灯</span>
+        </div>
+        <nav class="rooms" aria-label="部屋">
+          <button type="button" data-room="0">1st</button>
+          <button type="button" data-room="1">2nd</button>
+          <button type="button" data-room="2">3rd</button>
+          <button type="button" data-room="3">last</button>
+        </nav>
+        <button id="settings-open" type="button">設定</button>
+      </header>
+      <main>
+        <div class="panel-wrap">
+          <section id="board" class="plate" aria-live="polite"></section>
+          <p id="rule"></p>
+        </div>
+      </main>
+    </div>
+
+    <button id="reset-room" class="quiet" type="button">配置を戻す</button>
+    <button id="undo" type="button">一手戻る</button>
+    <button id="clear-btn" type="button">クリア</button>
+    <button id="debug-all-on" type="button" hidden>全点灯</button>
+    <p id="kana-echo" aria-live="polite"></p>
+    <p id="camera-reading" hidden></p>
+
+    <div id="settings" hidden>
+      <p class="settings-title">設定</p>
+      <div class="settings-grid">
+        <div class="slider-block">
+          <div class="slider-head">
+            <label for="brightness">画面の明るさ</label>
+            <span id="brightness-val">30</span>
+          </div>
+            <div class="slider-line">
+              <input id="brightness" type="range" min="0" max="100" step="1" value="30" />
+            </div>
+          </div>
+          <div class="slider-block">
+            <div class="slider-head">
+              <label for="volume">音量</label>
+              <span id="volume-val">10</span>
+            </div>
+            <div class="slider-line">
+              <input id="volume" type="range" min="0" max="100" step="1" value="10" />
+            </div>
+          </div>
+      </div>
+    </div>
+
+    <div id="flash" aria-hidden="true"></div>
+
+    <div id="title">
+      <div class="sheet">
+        <div class="title-gaze">
+          <div class="eye" aria-hidden="true">
+            <img class="eye-image" src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAQABAADASIAAhEBAxEB/8QAHgABAAICAwEBAQAAAAAAAAAAAAgJBwoEBQYCAQP/xABDEAEAAQMDAwIEAwQHBQcFAAAAAQIDBAUGEQcIIRIxCRMiQRQyURZhcYEVIzNCkaGxNENSU2IYJFeSlrLTRHOCwcP/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AqqAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/Z" alt="" width="200" height="200" decoding="async" />
+            <span class="eye-lid-shut" aria-hidden="true"></span>
+          </div>
+          <p class="eye-say">まぶしい・・・</p>
+        </div>
+        <p class="kicker">LIGHTS OUT</p>
+        <h1>消灯</h1>
+        <div class="rules">
+          <p class="rules-title">ルール</p>
+          <p>ゲームをするときは部屋を明るくしてプレイしましょう。</p>
+          <p>条件を満たしたら必ずクリアボタンを押してください。</p>
+        </div>
+        <button id="enter" class="metal" type="button">入室</button>
+        <button id="continue" class="metal" type="button" hidden>つづきから</button>
+        <button id="discard" class="quiet" type="button" hidden>最初から</button>
+        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+      </div>
+    </div>
+
+    <div id="ending">
+      <button id="ending-thanked-reset" class="quiet" type="button" hidden>最初から</button>
+      <div class="sheet">
+        <div class="eye ending-eye" hidden aria-hidden="true"></div>
+        <p id="ending-line" class="lede ending-copy" hidden></p>
+        <h1 id="ending-title" hidden>消灯成功</h1>
+        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+        <button id="ending-reset" class="quiet" type="button">最初から</button>
+      </div>
+    </div>
+
+    <noscript>
+      <p class="noscript">この謎を遊ぶには JavaScript を有効にしてください。</p>
+    </noscript>
+    <script>
+// Power model:
+// The crackle starts as soon as every bulb is on.
+// The breaker trips when every bulb is lit and both sliders are at 100.
+
+const LIGHT_DRAW = 17;
+const BREAKER_AMPS = 30;
+const RED_RATIO = 0.8;
+const STRAIN_RATIO = 0.8;
+const DEFAULT_BRIGHTNESS = 30;
+const DEFAULT_VOLUME = 10;
+
+const ROOMS = [
+  {
+    id: "first",
+    name: "1st",
+    plate: "1st",
+    initial: [
+      [1, 0, 1],
+      [1, 1, 1],
+      [1, 1, 1],
+    ],
+  },
+  {
+    // Looks like 3×3, but the center is two bulbs seen in perspective.
+    // The back one sits in the grid and has no button of its own.
+    // The front one floats in front of it and is linked only to the back one.
+    id: "stack",
+    name: "2nd",
+    plate: "2nd",
+    front: { at: [3, 1], behind: [1, 1] },
+    initial: [
+      [1, 1, 1],
+      [1, 0, 1],
+      [1, 0, 1],
+      [null, 1, null],
+    ],
+  },
+  {
+    // Shown as a row. Numbers above the bulbs are 1–9, then 0.
+    // Neighbors are this shape, not the row:
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    //   0
+    id: "second",
+    name: "3rd",
+    plate: "3rd",
+    labels: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+    // Phone keypad kana rows: pressing a bulb shows its kana at the bottom.
+    kana: ["あ", "か", "さ", "た", "な", "は", "ま", "や", "ら", "わ"],
+    initial: [
+      [1, 1, 0],
+      [1, 0, 1],
+      [0, 1, 0],
+      [null, 1, null],
+    ],
+  },
+  {
+    // Nine lights. The center has no button, so neighbors still toggle it.
+    // A full 3×3 cannot make all-on reachable and all-off unreachable.
+    id: "last",
+    name: "last",
+    plate: "last",
+    quiet: [[1, 1]],
+    initial: [
+      [1, 0, 1],
+      [1, 0, 0],
+      [0, 0, 0],
+    ],
+  },
+];
+
+function createState() {
+  return {
+    phase: "title",
+    room: 0,
+    brightness: DEFAULT_BRIGHTNESS,
+    volume: DEFAULT_VOLUME,
+    cut: false,
+    undo: null,
+    cleared: ROOMS.map(() => false),
+    grids: ROOMS.map((room) => room.initial.map((row) => row.slice())),
+  };
+}
+
+function isQuiet(room, row, col) {
+  return Boolean(room?.quiet?.some(([r, c]) => r === row && c === col));
+}
+
+function isAt(spot, row, col) {
+  return Boolean(spot) && spot[0] === row && spot[1] === col;
+}
+
+function cellsOf(room) {
+  const cells = [];
+  room.initial.forEach((row, r) => {
+    row.forEach((cell, c) => {
+      if (cell === null || isAt(room.front?.behind, r, c)) return;
+      cells.push({
+        row: r,
+        col: c,
+        quiet: isQuiet(room, r, c),
+        front: isAt(room.front?.at, r, c),
+        label: room.labels ? (room.labels[cells.length] ?? "") : null,
+      });
+    });
+  });
+  return cells;
+}
+
+function maxLights() {
+  return ROOMS.reduce(
+    (sum, room) => sum + room.initial.flat().filter((cell) => cell !== null).length,
+    0
+  );
+}
+
+function tripThreshold() {
+  return maxLights() * LIGHT_DRAW + 200;
+}
+
+function sliderDraw(state) {
+  return clampSlider(state.brightness) + clampSlider(state.volume);
+}
+
+function clampSlider(value, max = 100) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(max, Math.round(n)));
+}
+
+function press(grid, row, col, mode, room) {
+  const next = grid.map((line) => line.slice());
+  if (isQuiet(room, row, col) || next[row]?.[col] == null) return next;
+  const front = room?.front;
+  if (isAt(front?.behind, row, col)) return next;
+  if (isAt(front?.at, row, col)) {
+    next[front.at[0]][front.at[1]] ^= 1;
+    next[front.behind[0]][front.behind[1]] ^= 1;
+    return next;
+  }
+  const flip = (r, c) => {
+    if (r < 0 || c < 0 || r >= next.length || c >= next[r].length) return;
+    if (next[r][c] == null || isAt(front?.at, r, c)) return;
+    next[r][c] ^= 1;
+  };
+  if (mode === "single") {
+    flip(row, col);
+  } else {
+    flip(row, col);
+    flip(row - 1, col);
+    flip(row + 1, col);
+    flip(row, col - 1);
+    flip(row, col + 1);
+  }
+  return next;
+}
+
+function isAllOff(grid) {
+  return grid.every((row) => row.every((cell) => cell !== 1));
+}
+
+function setAll(grid, value) {
+  return grid.map((row) => row.map((cell) => (cell === null ? null : (value ? 1 : 0))));
+}
+
+function countLights(state) {
+  let total = 0;
+  for (const grid of state.grids) {
+    for (const cell of grid.flat()) if (cell === 1) total += 1;
+  }
+  return total;
+}
+
+function power(state) {
+  return countLights(state) * LIGHT_DRAW + sliderDraw(state);
+}
+
+function loadRatio(state) {
+  return power(state) / tripThreshold();
+}
+
+function isFullyOn(state) {
+  return !state.cut && power(state) >= tripThreshold();
+}
+
+function breakerTrips(state) {
+  return isFullyOn(state);
+}
+
+function gaugeLevel(state) {
+  const full = (grid) => Boolean(grid) && grid.every((row) => row.every((cell) => cell === null || cell === 1));
+  const grid = (id) => state.grids[ROOMS.findIndex((room) => room.id === id)];
+  let level = 0;
+  if (full(grid("first"))) level += 1;
+  if (full(grid("second"))) level += 1;
+  if (clampSlider(state.brightness) >= 100) level += 1;
+  if (clampSlider(state.volume) >= 100) level += 1;
+  return level;
+}
+
+function isStrained(state) {
+  if (state.cut || breakerTrips(state)) return false;
+  return countLights(state) === maxLights();
+}
+
+function formatAmps(amount) {
+  const shown = Math.floor((amount / tripThreshold()) * BREAKER_AMPS * 10) / 10;
+  return shown.toFixed(1);
+}
+
+function veilColor(brightness) {
+  const value = clampSlider(brightness);
+  const neutral = DEFAULT_BRIGHTNESS;
+  if (value <= neutral) {
+    const t = (neutral - value) / neutral;
+    return `rgba(0, 0, 0, ${(0.68 * t).toFixed(3)})`;
+  }
+  const t = (value - neutral) / (100 - neutral);
+  return `rgba(255, 246, 230, ${(0.62 * t).toFixed(3)})`;
+}
+
+function sanitize(data) {
+  if (!data || typeof data !== "object") return null;
+  const phases = new Set(["play", "tripping", "dark", "ended"]);
+  if (!phases.has(data.phase)) return null;
+  if (!Array.isArray(data.cleared) || data.cleared.length !== ROOMS.length) return null;
+  if (!Array.isArray(data.grids) || data.grids.length !== ROOMS.length) return null;
+
+  const state = createState();
+  state.phase = data.phase === "tripping" ? "dark" : data.phase;
+  state.cut = Boolean(data.cut) || state.phase === "dark" || state.phase === "ended";
+  state.brightness = clampSlider(data.brightness);
+  state.volume = clampSlider(data.volume);
+  state.cleared = ROOMS.map((_, index) => Boolean(data.cleared[index]));
+  state.room = Number.isInteger(data.room) && data.room >= 0 && data.room < ROOMS.length ? data.room : 0;
+  for (let index = 0; index < state.room; index += 1) {
+    if (!state.cleared[index]) {
+      state.room = index;
+      break;
+    }
+  }
+
+  for (let i = 0; i < ROOMS.length; i += 1) {
+    const source = data.grids[i];
+    const initial = ROOMS[i].initial;
+    if (!Array.isArray(source) || source.length !== initial.length) return null;
+    const grid = [];
+    for (let r = 0; r < initial.length; r += 1) {
+      if (!Array.isArray(source[r]) || source[r].length !== initial[r].length) return null;
+      grid.push(initial[r].map((cell, c) => (cell === null ? null : (source[r][c] ? 1 : 0))));
+    }
+    state.grids[i] = grid;
+  }
+
+  state.undo = readUndo(data.undo);
+  if (state.cut && state.phase === "play") state.phase = "dark";
+  return state;
+}
+
+function readUndo(undo) {
+  if (!undo || !Number.isInteger(undo.room) || undo.room < 0 || undo.room >= ROOMS.length) return null;
+  const initial = ROOMS[undo.room].initial;
+  const source = undo.grid;
+  if (!Array.isArray(source) || source.length !== initial.length) return null;
+  const grid = [];
+  for (let r = 0; r < initial.length; r += 1) {
+    if (!Array.isArray(source[r]) || source[r].length !== initial[r].length) return null;
+    grid.push(initial[r].map((cell, c) => (cell === null ? null : (source[r][c] ? 1 : 0))));
+  }
+  return { room: undo.room, grid };
+}
+
+globalThis.LightsOut = {
+  LIGHT_DRAW,
+  BREAKER_AMPS,
+  RED_RATIO,
+  STRAIN_RATIO,
+  DEFAULT_BRIGHTNESS,
+  DEFAULT_VOLUME,
+  sliderDraw,
+  ROOMS,
+  createState,
+  cellsOf,
+  maxLights,
+  tripThreshold,
+  clampSlider,
+  press,
+  isAllOff,
+  setAll,
+  countLights,
+  power,
+  loadRatio,
+  isFullyOn,
+  gaugeLevel,
+  breakerTrips,
+  isStrained,
+  formatAmps,
+  veilColor,
+  sanitize,
+};
+
+</script>
+    <script>
+(() => {
+const {
+  LIGHT_DRAW,
+  ROOMS,
+  breakerTrips,
+  cellsOf,
+  createState,
+  gaugeLevel,
+  isAllOff,
+  isStrained,
+  loadRatio,
+  maxLights,
+  power,
+  sliderDraw,
+  press,
+  sanitize,
+  setAll,
+  veilColor,
+} = globalThis.LightsOut;
+
+const KEY = "lightsout-c2-v1";
+const PRAISED = "lightsout-c2-praised";
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const TRIP_MS = reduceMotion ? 160 : 780;
+
+const scene = {
+  board: document.querySelector("#board"),
+  rooms: document.querySelectorAll(".rooms button"),
+  rule: document.querySelector("#rule"),
+  resetRoom: document.querySelector("#reset-room"),
+  undo: document.querySelector("#undo"),
+  clear: document.querySelector("#clear-btn"),
+  settings: document.querySelector("#settings"),
+  settingsOpen: document.querySelector("#settings-open"),
+  brightness: document.querySelector("#brightness"),
+  volume: document.querySelector("#volume"),
+  brightnessVal: document.querySelector("#brightness-val"),
+  volumeVal: document.querySelector("#volume-val"),
+  veil: document.querySelector("#veil"),
+  scene: document.querySelector("#scene"),
+  enter: document.querySelector("#enter"),
+  continue: document.querySelector("#continue"),
+  discard: document.querySelector("#discard"),
+  endingReset: document.querySelector("#ending-reset"),
+  endingThankedReset: document.querySelector("#ending-thanked-reset"),
+  endingLine: document.querySelector("#ending-line"),
+  endingEye: document.querySelector("#ending .ending-eye"),
+  debugAllOn: document.querySelector("#debug-all-on"),
+  kanaEcho: document.querySelector("#kana-echo"),
+  endingTitle: document.querySelector("#ending-title"),
+  cameraNotes: document.querySelectorAll(".camera-note"),
+  cameraReading: document.querySelector("#camera-reading"),
+};
+
+const DEBUG = new URLSearchParams(location.search).get("DEBUG")?.toUpperCase() === "TRUE";
+
+let state = createState();
+let resume = load();
+let armed = false;
+let tripTimer = 0;
+let lastRoom = -1;
+let slideToken = 0;
+let swallowClick = false;
+let praised = false;
+let returnVisit = false;
+let thanked = false;
+let darkFromStart = false;
+
+const audio = createAudio();
+const camera = createCamera();
+
+scene.board.addEventListener("click", (event) => {
+  if (document.body.classList.contains("is-screen-sliding")) return;
+  const sealed = event.target.closest(".switch-case");
+  if (sealed) {
+    const cap = sealed.querySelector(".glass-cap");
+    if (cap) {
+      cap.classList.remove("is-tapped");
+      void cap.offsetWidth;
+      cap.classList.add("is-tapped");
+    }
+    audio.glass();
+    return;
+  }
+  const glass = event.target.closest(".glass");
+  if (glass) {
+    glass.classList.remove("is-tapped");
+    void glass.offsetWidth;
+    glass.classList.add("is-tapped");
+    audio.glass();
+    return;
+  }
+  const cell = event.target.closest("[data-i]");
+  if (!cell || state.phase !== "play" || state.cut) return;
+  const room = ROOMS[state.room];
+  const spot = cellsOf(room)[Number(cell.dataset.i)];
+  if (!spot || spot.quiet) {
+    if (!spot?.quiet) return;
+    const cap = cell.querySelector(".glass-cap");
+    if (cap) {
+      cap.classList.remove("is-tapped");
+      void cap.offsetWidth;
+      cap.classList.add("is-tapped");
+    }
+    audio.glass();
+    return;
+  }
+  rememberMove();
+  state.grids[state.room] = press(state.grids[state.room], spot.row, spot.col, "linked", room);
+  audio.click();
+  commit();
+  if (room.kana) showKana(room.kana[Number(cell.dataset.i)]);
+});
+
+function showKana(char) {
+  const echo = scene.kanaEcho;
+  echo.textContent = char ?? "";
+  echo.dataset.room = String(state.room);
+  echo.classList.remove("is-shown");
+  void echo.offsetWidth;
+  echo.classList.add("is-shown");
+}
+
+scene.board.addEventListener("pointermove", (event) => {
+  const glass = event.target.closest(".glass, .cell.is-quiet, .switch-case");
+  if (!glass) return;
+  const face = glass.querySelector(".glass-cap") || glass;
+  const rect = face.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width) * 100;
+  const y = ((event.clientY - rect.top) / rect.height) * 100;
+  face.style.setProperty("--mx", `${x}%`);
+  face.style.setProperty("--my", `${y}%`);
+});
+
+scene.rooms.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (state.phase !== "play" || state.cut) return;
+    const room = Number(button.dataset.room);
+    const locked = room > 0 && !state.cleared[room - 1];
+    if (locked) {
+      button.classList.remove("is-deny");
+      void button.offsetWidth;
+      button.classList.add("is-deny");
+      return;
+    }
+    state.room = room;
+    audio.sync(state);
+    save();
+    render();
+  });
+});
+
+scene.undo.addEventListener("click", undoMove);
+
+scene.clear.addEventListener("click", () => {
+  if (state.phase === "ended") {
+    if (returnVisit) {
+      if (thanked) return;
+      thanked = true;
+      audio.confirm();
+      render();
+      return;
+    }
+    return;
+  }
+  if (state.phase === "dark") {
+    state.phase = "ended";
+    state.cleared[ROOMS.length - 1] = true;
+    resetEnding();
+    praised = true;
+    markPraised(true);
+    audio.confirm();
+    if (camera.isDark()) {
+      enterAfterDark(true);
+      return;
+    }
+    save();
+    render();
+    watchForDark();
+    return;
+  }
+  if (state.phase !== "play" || state.room >= ROOMS.length - 1) return;
+  if (!isAllOff(state.grids[state.room])) return;
+  state.cleared[state.room] = true;
+  audio.confirm();
+  if (state.room < ROOMS.length - 1) state.room += 1;
+  commit();
+});
+
+scene.clear.addEventListener("pointerenter", (event) => {
+  if (state.phase !== "dark") return;
+  if (event.pointerType === "touch" && navigator.vibrate) navigator.vibrate(10);
+});
+
+scene.settingsOpen.addEventListener("click", () => {
+  scene.settings.hidden = !scene.settings.hidden;
+  if (!scene.settings.hidden) scene.brightness.focus();
+});
+
+scene.brightness.addEventListener("input", () => {
+  state.brightness = Number(scene.brightness.value);
+  commit();
+});
+
+scene.volume.addEventListener("input", () => {
+  state.volume = Number(scene.volume.value);
+  commit();
+});
+
+scene.resetRoom.addEventListener("click", () => {
+  if (state.phase !== "play" || state.cut) return;
+  rememberMove();
+  if (state.cleared[state.room]) {
+    state.grids[state.room] = setAll(state.grids[state.room], 0);
+  } else {
+    state.grids[state.room] = ROOMS[state.room].initial.map((row) => row.slice());
+  }
+  audio.click();
+  commit();
+});
+
+scene.debugAllOn.hidden = !DEBUG;
+scene.debugAllOn.addEventListener("click", () => {
+  if (state.phase !== "play" || state.cut) return;
+  state.grids = state.grids.map((grid) => setAll(grid, 1));
+  state.undo = null;
+  audio.click();
+  commit();
+});
+
+scene.endingReset.addEventListener("click", hardReset);
+scene.endingThankedReset.addEventListener("click", hardReset);
+scene.discard.addEventListener("click", () => {
+  localStorage.removeItem(KEY);
+  markPraised(false);
+  resume = null;
+  renderTitle();
+});
+
+scene.enter.addEventListener("click", () => enterWithCamera(false));
+scene.continue.addEventListener("click", () => enterWithCamera(true));
+
+async function enterWithCamera(fromSave) {
+  audio.start();
+  scene.enter.disabled = true;
+  scene.continue.disabled = true;
+  const allowed = await camera.open();
+  scene.enter.disabled = false;
+  scene.continue.disabled = false;
+  showCameraNote(!allowed);
+  if (allowed) begin(fromSave);
+}
+
+function showCameraNote(on) {
+  scene.cameraNotes.forEach((note) => { note.hidden = !on; });
+}
+
+function watchForDark() {
+  showCameraNote(false);
+  camera.watch(enterAfterDark, () => showCameraNote(true), DEBUG ? showCameraReading : null);
+}
+
+function showCameraReading({ mean, spread, dark }) {
+  scene.cameraReading.hidden = false;
+  scene.cameraReading.textContent = `明るさ ${mean.toFixed(0)} / ばらつき ${spread.toFixed(0)}${dark ? " 暗い" : ""}`;
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") scene.settings.hidden = true;
+});
+
+document.addEventListener("pointerdown", (event) => {
+  if (scene.settings.hidden) return;
+  if (event.target.closest("#settings") || event.target.closest("#settings-open")) return;
+  scene.settings.hidden = true;
+  swallowClick = true;
+});
+
+document.addEventListener("click", (event) => {
+  if (!swallowClick) return;
+  swallowClick = false;
+  event.preventDefault();
+  event.stopPropagation();
+}, true);
+
+mountEndingEye();
+renderTitle();
+if (wasReload() && resume?.phase === "ended" && isPraisedMarked()) restorePraised();
+
+function begin(fromSave) {
+  clearTimeout(tripTimer);
+  const wasPraised = fromSave && resume?.phase === "ended";
+  if (fromSave && resume) {
+    state = resume;
+  } else {
+    state = createState();
+    state.phase = "play";
+    markPraised(false);
+  }
+  if (state.phase === "title") state.phase = "play";
+  scene.settings.hidden = true;
+  audio.start();
+  armed = false;
+  lastRoom = -1;
+  resetEnding();
+  if (wasPraised) praised = true;
+  if (!state.cut && breakerTrips(state)) {
+    cutPower();
+    return;
+  }
+  audio.sync(state);
+  save();
+  render();
+  armed = true;
+  if (wasPraised) watchForDark();
+}
+
+function restorePraised() {
+  state = resume;
+  scene.settings.hidden = true;
+  lastRoom = -1;
+  resetEnding();
+  praised = true;
+  render();
+  armed = true;
+  watchForDark();
+}
+
+function hardReset() {
+  clearTimeout(tripTimer);
+  camera.stopWatch();
+  scene.cameraReading.hidden = true;
+  showCameraNote(false);
+  localStorage.removeItem(KEY);
+  markPraised(false);
+  resume = null;
+  state = createState();
+  scene.settings.hidden = true;
+  audio.sync(state);
+  armed = false;
+  lastRoom = -1;
+  resetEnding();
+  render();
+}
+
+function mountEndingEye() {
+  scene.endingEye.innerHTML = document.querySelector("#title .eye").innerHTML;
+}
+
+function resetEnding() {
+  praised = false;
+  thanked = false;
+  returnVisit = false;
+  darkFromStart = false;
+  scene.endingLine.hidden = true;
+  scene.endingLine.textContent = "";
+}
+
+function rememberMove() {
+  state.undo = {
+    room: state.room,
+    grid: state.grids[state.room].map((row) => row.slice()),
+  };
+}
+
+function undoMove() {
+  const snap = state.undo;
+  if (!snap || state.phase === "title" || state.phase === "ended") return;
+  state.grids[snap.room] = snap.grid.map((row) => row.slice());
+  state.undo = null;
+  state.room = snap.room;
+  clearTimeout(tripTimer);
+  state.cut = false;
+  if (state.phase === "dark" || state.phase === "tripping") state.phase = "play";
+  audio.click();
+  commit();
+}
+
+function commit() {
+  if (!state.cut && state.phase === "play" && breakerTrips(state)) {
+    cutPower();
+    return;
+  }
+  audio.sync(state);
+  save();
+  render();
+}
+
+function cutPower() {
+  state.cut = true;
+  state.phase = "tripping";
+  scene.settings.hidden = true;
+  audio.cut(state.volume);
+  save();
+  render();
+  clearTimeout(tripTimer);
+  tripTimer = window.setTimeout(() => {
+    state.phase = "dark";
+    audio.silence();
+    save();
+    render();
+  }, TRIP_MS);
+}
+
+function render() {
+  document.body.className = `phase-${state.phase}${isStrained(state) ? " strain" : ""}${returnVisit ? " return-visit" : ""}`;
+  if (state.phase === "title") {
+    renderTitle();
+    return;
+  }
+  renderTitle();
+  paintBoard();
+  paintChrome();
+  scene.endingEye.hidden = !praised || returnVisit;
+  const line = returnVisit
+    ? (thanked
+      ? "お疲れさまでした。"
+      : (darkFromStart ? "あなたの部屋…暗くて落ち着きますね。" : "暗くしてくれたんですね。ありがとう。"))
+    : (praised ? "まだまぶしい…" : "");
+  if (scene.endingLine.textContent !== line) scene.endingLine.textContent = line;
+  scene.endingLine.hidden = line === "";
+  scene.endingThankedReset.hidden = !(returnVisit && thanked);
+  scene.endingReset.hidden = praised || returnVisit;
+  const title = returnVisit ? "消灯成功" : "";
+  if (scene.endingTitle.textContent !== title) scene.endingTitle.textContent = title;
+  scene.endingTitle.hidden = title === "";
+  if (state.phase !== "play" || scene.kanaEcho.dataset.room !== String(state.room)) {
+    scene.kanaEcho.textContent = "";
+    scene.kanaEcho.classList.remove("is-shown");
+    delete scene.kanaEcho.dataset.room;
+  }
+  scene.veil.style.background = state.phase === "play" || state.phase === "tripping"
+    ? veilColor(state.brightness)
+    : "transparent";
+}
+
+function renderTitle() {
+  const hasResume = Boolean(resume);
+  scene.enter.hidden = hasResume;
+  scene.continue.hidden = !hasResume;
+  scene.discard.hidden = !hasResume;
+}
+
+function paintBoard() {
+  const room = ROOMS[state.room];
+  const signature = boardSignature();
+  if (scene.board.dataset.signature !== signature) {
+    const from = lastRoom;
+    const pane = buildRoomPane(state.room);
+    const direction = from >= 0 && from !== state.room ? Math.sign(state.room - from) : 0;
+    scene.board.dataset.signature = signature;
+    scene.board.dataset.room = String(state.room);
+    lastRoom = state.room;
+    if (direction && !reduceMotion) slideRooms(pane, from, direction);
+    else settleBoard(pane);
+  } else {
+    const spots = cellsOf(room);
+    const live = scene.board.querySelector(`.board-pane[data-room="${state.room}"]`) || scene.board;
+    live.querySelectorAll("[data-i]").forEach((button) => {
+      const spot = spots[Number(button.dataset.i)];
+      const on = state.grids[state.room][spot.row][spot.col] === 1;
+      if (button.tagName === "BUTTON") button.setAttribute("aria-pressed", on ? "true" : "false");
+      button.querySelector(".bulb").classList.toggle("on", on);
+    });
+    paintLeak(live, room, state.grids[state.room]);
+  }
+
+  if (!document.body.classList.contains("is-screen-sliding")) placeSwitch();
+  paintSealedSwitch();
+
+  const roomReady = state.phase === "play"
+    && state.room < ROOMS.length - 1
+    && !state.cleared[state.room]
+    && isAllOff(state.grids[state.room]);
+  const visitReady = returnVisit && !thanked;
+  const ready = roomReady || visitReady;
+  if (armed && roomReady && !scene.clear.classList.contains("ready")) audio.chime();
+  scene.clear.classList.toggle("ready", ready);
+  scene.clear.tabIndex = ready ? 0 : -1;
+}
+
+function paintChrome() {
+  scene.rooms.forEach((button) => {
+    const room = Number(button.dataset.room);
+    const locked = room > 0 && !state.cleared[room - 1];
+    button.classList.toggle("is-locked", locked);
+    button.setAttribute("aria-disabled", locked ? "true" : "false");
+    button.setAttribute("aria-current", room === state.room ? "true" : "false");
+    button.setAttribute("aria-label", locked ? `${ROOMS[room].name}、施錠` : ROOMS[room].name);
+  });
+
+  scene.rule.textContent = ruleText();
+  scene.undo.disabled = !state.undo;
+  scene.resetRoom.hidden = state.phase !== "play";
+
+  const ratio = Math.min(1, loadRatio(state));
+  document.body.style.setProperty("--load", ratio.toFixed(3));
+
+  scene.brightness.value = String(state.brightness);
+  scene.volume.value = String(state.volume);
+  scene.brightnessVal.textContent = String(state.brightness);
+  scene.volumeVal.textContent = String(state.volume);
+  scene.brightnessVal.classList.toggle("is-max", state.brightness === 100);
+  scene.volumeVal.classList.toggle("is-max", state.volume === 100);
+  scene.brightness.closest(".slider-line").style.setProperty("--p", `${state.brightness}%`);
+  scene.volume.closest(".slider-line").style.setProperty("--p", `${state.volume}%`);
+  scene.board.querySelector(".breaker-art")?.classList.toggle("live", !state.cut && power(state) > 0);
+  const level = gaugeLevel(state);
+  scene.board.querySelectorAll(".gauge .seg").forEach((seg, index) => {
+    seg.classList.toggle("is-lit", index < level);
+  });
+}
+
+function ruleText() {
+  return "";
+}
+
+function boardSignature() {
+  return String(state.room);
+}
+
+function switchPlate() {
+  const plate = span("switch-plate");
+  const onLabel = span("toggle-word on");
+  onLabel.textContent = "ON";
+  const offLabel = span("toggle-word off");
+  offLabel.textContent = "OFF";
+  const well = span("switch-well");
+  well.append(span("switch-lever"));
+  plate.append(span("switch-screw"), onLabel, well, offLabel, span("switch-screw"));
+  return plate;
+}
+
+function boltMark() {
+  const mark = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  mark.setAttribute("class", "bolt");
+  mark.setAttribute("viewBox", "0 0 16 24");
+  mark.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M9.2 0 L3 13.2 H7.6 L5.4 24 L14.2 9.4 H9.2 Z");
+  mark.append(path);
+  return mark;
+}
+
+function sealedSwitch() {
+  const wrap = div("switch-case");
+  wrap.setAttribute("role", "img");
+  wrap.setAttribute("aria-label", "ガラスの中のスイッチ");
+  const toggle = div("toggle");
+  const tripped = state.cut || breakerTrips(state);
+  toggle.setAttribute("aria-pressed", tripped ? "false" : "true");
+  toggle.setAttribute("aria-hidden", "true");
+  const plate = switchPlate();
+  plate.append(boltMark());
+  toggle.append(plate);
+  const cap = div("glass-cap switch-glass");
+  cap.append(span("sheen"));
+  wrap.append(toggle, cap);
+  return wrap;
+}
+
+function buildRoomPane(roomIndex) {
+  const room = ROOMS[roomIndex];
+  const pane = div("board-pane");
+  pane.dataset.room = String(roomIndex);
+  pane.append(div("nameplate", room.plate));
+  const spots = cellsOf(room);
+  const stage = div("board-stage");
+  const gridAt = (spot, index) => {
+    const node = cell(spot, index, state.grids[roomIndex][spot.row][spot.col]);
+    node.style.gridColumn = String(spot.col + 1);
+    node.style.gridRow = String(spot.row + 1);
+    return node;
+  };
+  if (room.id === "last") {
+    const grid = div("grid");
+    grid.style.setProperty("--cols", String(room.initial[0].length));
+    spots.forEach((spot, index) => grid.append(gridAt(spot, index)));
+    stage.append(grid, sealedSwitch());
+  } else if (room.front) {
+    const grid = div("grid");
+    grid.style.setProperty("--cols", "3");
+    const [behindRow, behindCol] = room.front.behind;
+    spots.forEach((spot, index) => {
+      const node = gridAt(spot, index);
+      if (spot.front) {
+        node.classList.add("is-front");
+        node.style.gridColumn = String(behindCol + 1);
+        node.style.gridRow = String(behindRow + 1);
+        node.setAttribute("aria-label", `${behindRow + 1}行${behindCol + 1}列`);
+        node.prepend(span("leak"));
+      }
+      grid.append(node);
+    });
+    paintLeak(grid, room, state.grids[roomIndex]);
+    stage.append(grid);
+  } else if (room.labels) {
+    const row = div("kana-row");
+    spots.forEach((spot, index) => {
+      row.append(cell(spot, index, state.grids[roomIndex][spot.row][spot.col]));
+    });
+    stage.append(row);
+  } else {
+    const grid = div("grid");
+    grid.style.setProperty("--cols", String(room.initial[0].length));
+    spots.forEach((spot, index) => grid.append(gridAt(spot, index)));
+    stage.append(grid);
+  }
+  pane.append(stage);
+  return pane;
+}
+
+function settleBoard(pane) {
+  slideToken += 1;
+  restoreScreen();
+  document.querySelectorAll("body > .switch-case").forEach((node) => node.remove());
+  scene.board.replaceChildren(pane);
+}
+
+let screenStage = null;
+
+function restoreScreen() {
+  if (!document.body.classList.contains("is-screen-sliding")) return;
+  document.body.classList.remove("is-screen-sliding");
+  scene.veil.style.visibility = "";
+  const undo = document.querySelector("#undo");
+  if (scene.scene.parentElement !== document.body) document.body.insertBefore(scene.scene, undo);
+  screenStage?.remove();
+  screenStage = null;
+}
+
+function stickSwitch(board, atDock) {
+  const sealed = board.querySelector(".switch-case");
+  if (!sealed) return;
+  const narrow = window.matchMedia("(max-width: 720px)").matches;
+  if (narrow) {
+    sealed.style.position = "relative";
+    sealed.style.left = "auto";
+    sealed.style.top = "auto";
+    sealed.style.margin = "16px auto 4px";
+    sealed.style.width = "fit-content";
+    sealed.style.transform = "";
+    sealed.style.zIndex = "";
+    return;
+  }
+  const boardBox = board.getBoundingClientRect();
+  const width = sealed.offsetWidth;
+  const height = sealed.offsetHeight;
+  const seen = sealed.getBoundingClientRect();
+  let edge = atDock ? boardBox.right + 28 : seen.left;
+  let top = atDock ? boardBox.bottom - height : seen.top;
+  if (atDock && edge + width > window.innerWidth - 12) edge = window.innerWidth - width - 12;
+  sealed.style.position = "absolute";
+  sealed.style.margin = "0";
+  sealed.style.width = "auto";
+  sealed.style.transform = "";
+  sealed.style.zIndex = "4";
+  sealed.style.left = `${Math.round(edge - boardBox.left - board.clientLeft)}px`;
+  sealed.style.top = `${Math.round(top - boardBox.top - board.clientTop)}px`;
+}
+
+function screenPage(content) {
+  const page = div("screen-page");
+  page.append(content);
+  const shade = div("screen-shade");
+  shade.style.background = scene.veil.style.background;
+  page.append(shade);
+  return page;
+}
+
+function slideRooms(pane, from, direction) {
+  const token = ++slideToken;
+  restoreScreen();
+  stickSwitch(scene.board, false);
+  const copy = scene.scene.cloneNode(true);
+  copy.removeAttribute("id");
+  copy.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
+  copy.inert = true;
+  scene.board.replaceChildren(pane);
+  stickSwitch(scene.board, true);
+
+  const track = div("screen-track");
+  track.classList.add(direction > 0 ? "to-next" : "to-prev");
+  const outgoing = screenPage(copy);
+  const incoming = screenPage(scene.scene);
+  if (direction > 0) track.append(outgoing, incoming);
+  else track.append(incoming, outgoing);
+
+  screenStage = div("screen-slide");
+  screenStage.append(track);
+  const undo = document.querySelector("#undo");
+  document.body.insertBefore(screenStage, undo);
+  document.body.classList.add("is-screen-sliding");
+  scene.veil.style.visibility = "hidden";
+
+  const finish = () => {
+    if (token !== slideToken) return;
+    slideToken += 1;
+    restoreScreen();
+    placeSwitch();
+  };
+  track.addEventListener("animationend", (event) => {
+    if (event.target === track) finish();
+  });
+  window.setTimeout(finish, 580);
+}
+
+function placeSwitch() {
+  if (document.body.classList.contains("is-screen-sliding")) return;
+  const sealed = scene.board.querySelector(".switch-case");
+  if (!sealed) return;
+  sealed.style.zIndex = "";
+  const board = scene.board.getBoundingClientRect();
+  const narrow = window.matchMedia("(max-width: 720px)").matches;
+  if (narrow) {
+    sealed.style.position = "relative";
+    sealed.style.left = "auto";
+    sealed.style.top = "auto";
+    sealed.style.margin = "16px auto 4px";
+    sealed.style.width = "fit-content";
+    return;
+  }
+  sealed.style.position = "fixed";
+  sealed.style.margin = "0";
+  sealed.style.width = "auto";
+  const width = sealed.offsetWidth;
+  const height = sealed.offsetHeight;
+  let edge = board.right + 28;
+  if (edge + width > window.innerWidth - 12) edge = window.innerWidth - width - 12;
+  sealed.style.left = `${Math.round(edge)}px`;
+  sealed.style.top = `${Math.round(board.bottom - height)}px`;
+}
+
+let switchFrame = 0;
+function scheduleSwitch() {
+  if (switchFrame) return;
+  switchFrame = requestAnimationFrame(() => {
+    switchFrame = 0;
+    placeSwitch();
+  });
+}
+
+window.addEventListener("resize", scheduleSwitch);
+window.addEventListener("scroll", scheduleSwitch, { passive: true });
+window.visualViewport?.addEventListener("resize", scheduleSwitch);
+window.visualViewport?.addEventListener("scroll", scheduleSwitch);
+document.fonts?.ready?.then(() => placeSwitch());
+
+function paintSealedSwitch() {
+  const toggle = scene.board.querySelector(".switch-case .toggle");
+  if (!toggle) return;
+  const off = state.cut || breakerTrips(state);
+  toggle.setAttribute("aria-pressed", off ? "false" : "true");
+}
+
+function paintLeak(root, room, grid) {
+  if (!room.front) return;
+  const [r, c] = room.front.behind;
+  root.querySelector(".leak")?.classList.toggle("on", grid[r][c] === 1);
+}
+
+function cell(spot, index, on) {
+  const button = document.createElement(spot.quiet ? "div" : "button");
+  if (!spot.quiet) button.type = "button";
+  button.className = spot.quiet ? "cell is-quiet" : "cell";
+  button.dataset.i = String(index);
+  if (!spot.quiet) button.setAttribute("aria-pressed", on ? "true" : "false");
+  button.setAttribute("aria-label", spot.label || (spot.label === "" ? "灯" : `${spot.row + 1}行${spot.col + 1}列`));
+  const bulb = document.createElement("span");
+  bulb.className = on ? "bulb on" : "bulb";
+  bulb.setAttribute("aria-hidden", "true");
+  if (spot.label) {
+    const label = document.createElement("span");
+    label.className = "kana";
+    label.textContent = spot.label;
+    button.append(label);
+  }
+  button.append(bulb, span("socket"));
+  if (spot.quiet) {
+    const cap = div("glass-cap");
+    cap.append(span("sheen"));
+    button.append(cap);
+    button.setAttribute("aria-label", "ガラスの中の灯");
+  }
+  if (spot.label == null) button.append(span("cord"));
+  return button;
+}
+
+function vault() {
+  const chamber = div("chamber");
+  const rear = div("rear");
+  const art = div("breaker-art");
+  art.setAttribute("aria-hidden", "true");
+  const housing = div("glass breaker-glass");
+  const box = span("breaker-box");
+  const mark = span("mark");
+  mark.textContent = "電力";
+  const on = span("pos on");
+  on.textContent = "入";
+  const off = span("pos off");
+  off.textContent = "切";
+  const gauge = span("gauge");
+  for (let i = 0; i < 4; i += 1) gauge.append(span("seg"));
+  box.append(mark, gauge, span("jaw"), on, span("arc"), span("lever"), span("pivot"), off);
+  const housingFace = div("glass-face");
+  housingFace.append(span("sheen"));
+  housing.append(box, span("pedestal"), housingFace);
+  art.append(housing);
+  rear.append(art, span("drop-lead"));
+
+  const wrap = div("vault");
+  const glass = div("glass");
+  glass.setAttribute("role", "img");
+  glass.setAttribute("aria-label", "封入灯 No.03。高圧ガラス。接触禁止。");
+  const bulb = document.createElement("span");
+  bulb.className = "bulb on sealed";
+  bulb.setAttribute("aria-hidden", "true");
+  const face = div("glass-face");
+  face.append(span("sheen"));
+  const lead = span("cord");
+  lead.classList.add("live", "sealed-lead");
+  glass.append(bulb, lead, div("pedestal"), face);
+  const label = document.createElement("p");
+  label.className = "vault-label";
+  label.textContent = "封入灯 No.03\n高圧ガラス\n接触禁止";
+  wrap.append(glass, harness(), label);
+  chamber.append(rear, wrap);
+  return chamber;
+}
+
+function harness() {
+  const node = div("harness");
+  node.setAttribute("aria-hidden", "true");
+  node.append(span("bus"), span("grommet"));
+  return node;
+}
+
+function div(className, text) {
+  const node = document.createElement("div");
+  node.className = className;
+  if (text) node.textContent = text;
+  return node;
+}
+
+function span(className) {
+  const node = document.createElement("span");
+  node.className = className;
+  return node;
+}
+
+function save() {
+  if (state.phase === "title") return;
+  const payload = JSON.stringify(state);
+  try {
+    localStorage.setItem(KEY, payload);
+  } catch {
+    // Opening the file directly can block storage. Play still continues.
+  }
+  resume = sanitize(JSON.parse(payload));
+}
+
+function wasReload() {
+  const nav = performance.getEntriesByType("navigation")[0];
+  if (nav?.type === "reload") return true;
+  return performance.navigation?.type === 1;
+}
+
+function markPraised(on) {
+  try {
+    if (on) localStorage.setItem(PRAISED, "1");
+    else localStorage.removeItem(PRAISED);
+  } catch {
+    // Storage can be blocked. A reload then starts from the title.
+  }
+}
+
+function isPraisedMarked() {
+  try {
+    return localStorage.getItem(PRAISED) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function enterAfterDark(atOnce = false) {
+  if (state.phase !== "ended" || !praised || returnVisit) return;
+  darkFromStart = atOnce;
+  camera.close();
+  scene.cameraReading.hidden = true;
+  state = createState();
+  state.phase = "ended";
+  state.cut = true;
+  state.cleared = ROOMS.map(() => true);
+  praised = false;
+  thanked = false;
+  returnVisit = true;
+  markPraised(false);
+  scene.settings.hidden = true;
+  save();
+  render();
+}
+
+function createCamera() {
+  // A finger over the lens is not pure black: auto exposure turns it into a dim, flat red.
+  // So "dark" is either very dim, or dim and nearly uniform.
+  const PITCH_BLACK = 24;
+  const DIM = 60;
+  const FLAT = 22;
+  const WARMUP_MS = 1000;
+  const HOLD_MS = 800;
+  let stream = null;
+  let video = null;
+  let opening = null;
+  let timer = 0;
+  let token = 0;
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 24;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+  function live() {
+    return Boolean(stream?.getVideoTracks().some((track) => track.readyState === "live"));
+  }
+
+  // Kept open once granted, so the browser only asks once per page.
+  function open() {
+    if (live()) return Promise.resolve(true);
+    if (!navigator.mediaDevices?.getUserMedia) return Promise.resolve(false);
+    opening ??= navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then((next) => {
+        stream = next;
+        video?.remove();
+        video = document.createElement("video");
+        video.className = "camera-feed";
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute("aria-hidden", "true");
+        video.srcObject = stream;
+        document.body.append(video);
+        video.play().catch(() => {});
+        return true;
+      })
+      .catch(() => false)
+      .finally(() => { opening = null; });
+    return opening;
+  }
+
+  function measure() {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const count = data.length / 4;
+    let sum = 0;
+    let sumSq = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const y = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      sum += y;
+      sumSq += y * y;
+    }
+    const mean = sum / count;
+    const spread = Math.sqrt(Math.max(0, sumSq / count - mean * mean));
+    return { mean, spread, dark: mean < PITCH_BLACK || (mean < DIM && spread < FLAT) };
+  }
+
+  function isDark() {
+    if (!live() || !video || video.readyState < 2) return false;
+    return measure().dark;
+  }
+
+  function stopWatch() {
+    token += 1;
+    clearInterval(timer);
+    timer = 0;
+  }
+
+  async function watch(onDark, onFail, onSample) {
+    stopWatch();
+    const mine = token;
+    const ok = await open();
+    if (mine !== token) return;
+    if (!ok) { onFail(); return; }
+    const startedAt = performance.now();
+    let darkSince = 0;
+    timer = window.setInterval(() => {
+      if (!live()) { stopWatch(); onFail(); return; }
+      if (!video || video.readyState < 2) return;
+      const now = performance.now();
+      const sample = measure();
+      onSample?.(sample);
+      if (now - startedAt < WARMUP_MS || !sample.dark) {
+        darkSince = 0;
+        return;
+      }
+      if (!darkSince) darkSince = now;
+      if (now - darkSince >= HOLD_MS) {
+        stopWatch();
+        onDark();
+      }
+    }, 120);
+  }
+
+  function close() {
+    stopWatch();
+    stream?.getTracks().forEach((track) => track.stop());
+    stream = null;
+    video?.remove();
+    video = null;
+  }
+
+  return { open, watch, isDark, stopWatch, close };
+}
+
+function load() {
+  try {
+    return sanitize(JSON.parse(localStorage.getItem(KEY) || "null"));
+  } catch {
+    return null;
+  }
+}
+
+function createAudio() {
+  let ctx;
+  let master;
+  let hum;
+  let buzz;
+  let crackleGain;
+  let noiseBuffer;
+  let impact;
+  let started = false;
+
+  function context() {
+    if (ctx === null) return null;
+    if (!ctx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      try {
+      ctx = new Ctx();
+      master = ctx.createGain();
+      master.gain.value = 0;
+      master.connect(ctx.destination);
+      const fundamental = oscillator(60, "sine");
+      const overtone = oscillator(120, "triangle");
+      hum = ctx.createGain();
+      hum.gain.value = 0.2;
+      overtone.gain = ctx.createGain();
+      overtone.gain.gain.value = 0.08;
+      fundamental.connect(hum);
+      overtone.connect(overtone.gain).connect(hum);
+      hum.connect(master);
+      buzz = oscillator(54, "sawtooth");
+      buzz.gain = ctx.createGain();
+      buzz.gain.gain.value = 0;
+      buzz.connect(buzz.gain).connect(ctx.destination);
+      noiseBuffer = makeNoise(1.6);
+      const crackle = ctx.createBufferSource();
+      crackle.buffer = noiseBuffer;
+      crackle.loop = true;
+      const crackleFilter = ctx.createBiquadFilter();
+      crackleFilter.type = "bandpass";
+      crackleFilter.frequency.value = 1400;
+      crackleFilter.Q.value = 0.6;
+      crackleGain = ctx.createGain();
+      crackleGain.gain.value = 0;
+      crackle.connect(crackleFilter).connect(crackleGain).connect(ctx.destination);
+      fundamental.start();
+      overtone.start();
+      buzz.start();
+      crackle.start();
+      started = true;
+      } catch {
+        ctx = null;
+        started = false;
+        return null;
+      }
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+
+  function makeNoise(seconds) {
+    const length = Math.floor(ctx.sampleRate * seconds);
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) {
+      const spike = Math.random() < 0.018 ? Math.random() * 2 - 1 : 0;
+      data[i] = spike * (0.35 + Math.random() * 0.65);
+    }
+    return buffer;
+  }
+
+  function oscillator(frequency, type) {
+    const node = ctx.createOscillator();
+    node.frequency.value = frequency;
+    node.type = type;
+    return node;
+  }
+
+  function tone(frequency, duration, gain, type = "sine") {
+    if (!(gain > 0)) return;
+    const current = context();
+    if (!current) return;
+    const osc = current.createOscillator();
+    const amp = current.createGain();
+    osc.type = type;
+    osc.frequency.value = frequency;
+    amp.gain.setValueAtTime(gain, current.currentTime);
+    amp.gain.exponentialRampToValueAtTime(0.0001, current.currentTime + duration);
+    osc.connect(amp).connect(current.destination);
+    osc.start();
+    osc.stop(current.currentTime + duration + 0.02);
+  }
+
+  function burst(gain) {
+    if (!(gain > 0) || !noiseBuffer) return;
+    const current = context();
+    if (!current) return;
+    const source = current.createBufferSource();
+    source.buffer = noiseBuffer;
+    const filter = current.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.value = 900;
+    const amp = current.createGain();
+    amp.gain.setValueAtTime(gain, current.currentTime);
+    amp.gain.exponentialRampToValueAtTime(0.0001, current.currentTime + 0.09);
+    source.connect(filter).connect(amp).connect(current.destination);
+    source.start();
+    source.stop(current.currentTime + 0.1);
+  }
+
+  return {
+    start() {
+      context();
+    },
+    sync(next) {
+      if (!started) return;
+      const audible = next.phase === "play" && !next.cut;
+      const heard = next.volume;
+      const masterGain = audible ? heard / 100 : 0;
+      const hear = audible ? Math.sqrt(heard / 100) : 0;
+      const bulbRatio = Math.min(1, Math.max(0, power(next) - sliderDraw(next)) / (maxLights() * LIGHT_DRAW));
+      const presence = Math.sqrt(bulbRatio);
+      const ratio = Math.min(1, loadRatio(next));
+      const level = masterGain * (0.02 + presence * 0.1);
+      const now = ctx.currentTime;
+      master.gain.cancelScheduledValues(now);
+      master.gain.linearRampToValueAtTime(Math.max(0, level), now + 0.06);
+      crackleGain.gain.cancelScheduledValues(now);
+      crackleGain.gain.linearRampToValueAtTime(hear * presence * (0.08 + ratio * 0.2), now + 0.08);
+      buzz.gain.gain.cancelScheduledValues(now);
+      buzz.gain.gain.linearRampToValueAtTime(
+        isStrained(next) ? hear * 0.12 : hear * presence * ratio * 0.02,
+        now + 0.08
+      );
+    },
+    click() {
+      const hear = Math.sqrt(state.volume / 100);
+      tone(180, 0.03, 0.07 * hear, "square");
+      burst(0.16 * hear);
+    },
+    glass() {
+      tone(1680, 0.07, 0.05 * Math.sqrt(state.volume / 100));
+    },
+    chime() {
+      const gain = 0.05 * Math.sqrt(Math.max(state.volume, 1) / 100);
+      tone(523, 0.12, gain);
+      window.setTimeout(() => tone(784, 0.16, gain * 0.9), 90);
+    },
+    confirm() {
+      tone(180, 0.08, 0.16 * Math.sqrt(Math.max(state.volume, 1) / 100), "triangle");
+    },
+    touch() {
+      tone(920, 0.03, 0.04 * Math.sqrt(Math.max(state.volume, 1) / 100));
+    },
+    cut(volume) {
+      if (!context()) return;
+      const now = ctx.currentTime;
+      const stop = (param) => {
+        param.cancelScheduledValues(now);
+        param.setValueAtTime(param.value, now);
+        param.linearRampToValueAtTime(0, now + 0.03);
+      };
+      stop(master.gain);
+      stop(crackleGain.gain);
+      stop(buzz.gain.gain);
+      const length = Math.floor(ctx.sampleRate * 0.45);
+      const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < length; i += 1) {
+        const env = (1 - i / length) ** 2.4;
+        data[i] = (Math.random() * 2 - 1) * env;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 520;
+      const amp = ctx.createGain();
+      amp.gain.value = 0.55 * Math.max(0.4, volume / 100);
+      source.connect(filter).connect(amp).connect(ctx.destination);
+      try { impact?.stop(); } catch { /* already finished */ }
+      impact = source;
+      source.start();
+    },
+    silence() {
+      if (!started) return;
+      const now = ctx.currentTime;
+      const stop = (param) => {
+        param.cancelScheduledValues(now);
+        param.setValueAtTime(0, now);
+      };
+      stop(master.gain);
+      stop(crackleGain.gain);
+      stop(buzz.gain.gain);
+      try { impact?.stop(); } catch { /* already finished */ }
+      impact = null;
+    },
+  };
+}
+})();
+
+</script>
+  </body>
+</html>

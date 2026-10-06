@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node play.mjs",
+    "build": "node build.mjs",
+    "test": "node logic.test.js"
+  }
+}

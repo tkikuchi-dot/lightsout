@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#090807" />
+    <title>消灯</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='6' fill='%23ffc56b'/%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23ffc56b' stroke-opacity='.45'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@300;400;500&family=Shippori+Mincho:wght@500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="phase-title">
+    <div id="veil" aria-hidden="true"></div>
+    <div id="scene">
+      <header class="topbar">
+        <div class="brand">
+          <span class="kicker">B3</span>
+          <span class="brand-name">消灯</span>
+        </div>
+        <nav class="rooms" aria-label="部屋">
+          <button type="button" data-room="0">1st</button>
+          <button type="button" data-room="1">2nd</button>
+          <button type="button" data-room="2">3rd</button>
+          <button type="button" data-room="3">last</button>
+        </nav>
+        <button id="settings-open" type="button">設定</button>
+      </header>
+      <main>
+        <div class="panel-wrap">
+          <section id="board" class="plate" aria-live="polite"></section>
+          <p id="rule"></p>
+        </div>
+      </main>
+    </div>
+
+    <button id="reset-room" class="quiet" type="button">配置を戻す</button>
+    <button id="undo" type="button">一手戻る</button>
+    <button id="clear-btn" type="button">クリア</button>
+    <button id="debug-all-on" type="button" hidden>全点灯</button>
+    <p id="kana-echo" aria-live="polite"></p>
+    <p id="camera-reading" hidden></p>
+
+    <div id="settings" hidden>
+      <p class="settings-title">設定</p>
+      <div class="settings-grid">
+        <div class="slider-block">
+          <div class="slider-head">
+            <label for="brightness">画面の明るさ</label>
+            <span id="brightness-val">30</span>
+          </div>
+            <div class="slider-line">
+              <input id="brightness" type="range" min="0" max="100" step="1" value="30" />
+            </div>
+          </div>
+          <div class="slider-block">
+            <div class="slider-head">
+              <label for="volume">音量</label>
+              <span id="volume-val">10</span>
+            </div>
+            <div class="slider-line">
+              <input id="volume" type="range" min="0" max="100" step="1" value="10" />
+            </div>
+          </div>
+      </div>
+    </div>
+
+    <div id="flash" aria-hidden="true"></div>
+
+    <div id="title">
+      <div class="sheet">
+        <div class="title-gaze">
+          <div class="eye" aria-hidden="true">
+            <img class="eye-image" src="eye.png" alt="" width="200" height="200" decoding="async" />
+            <span class="eye-lid-shut" aria-hidden="true"></span>
+          </div>
+          <p class="eye-say">まぶしい・・・</p>
+        </div>
+        <p class="kicker">LIGHTS OUT</p>
+        <h1>消灯</h1>
+        <div class="rules">
+          <p class="rules-title">ルール</p>
+          <p>ゲームをするときは部屋を明るくしてプレイしましょう。</p>
+          <p>条件を満たしたら必ずクリアボタンを押してください。</p>
+        </div>
+        <button id="enter" class="metal" type="button">入室</button>
+        <button id="continue" class="metal" type="button" hidden>つづきから</button>
+        <button id="discard" class="quiet" type="button" hidden>最初から</button>
+        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+      </div>
+    </div>
+
+    <div id="ending">
+      <button id="ending-thanked-reset" class="quiet" type="button" hidden>最初から</button>
+      <div class="sheet">
+        <div class="eye ending-eye" hidden aria-hidden="true"></div>
+        <p id="ending-line" class="lede ending-copy" hidden></p>
+        <h1 id="ending-title" hidden>消灯成功</h1>
+        <p class="camera-note" role="alert" hidden>カメラを許可して遊んでください。</p>
+        <button id="ending-reset" class="quiet" type="button">最初から</button>
+      </div>
+    </div>
+
+    <noscript>
+      <p class="noscript">この謎を遊ぶには JavaScript を有効にしてください。</p>
+    </noscript>
+    <script src="logic.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
