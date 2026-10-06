@@ -55,6 +55,39 @@ const scene = {
 
 const DEBUG = new URLSearchParams(location.search).get("DEBUG")?.toUpperCase() === "TRUE";
 
+// The camera only works when this page is the top-level document on its own origin,
+// so copies shown inside other sites are sent back here.
+const HOME = "https://tkikuchi-dot.github.io/lightsout/";
+const homeUrl = DEBUG ? `${HOME}?DEBUG=TRUE` : HOME;
+
+function isFramed() {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+function isMirrored() {
+  const local = location.protocol === "file:" || ["localhost", "127.0.0.1", ""].includes(location.hostname);
+  return !local && !location.href.startsWith(HOME);
+}
+
+function goHome() {
+  try {
+    window.top.location.href = homeUrl;
+  } catch {
+    window.open(homeUrl, "_blank");
+  }
+}
+
+if (isMirrored()) {
+  location.replace(homeUrl);
+} else if (isFramed()) {
+  // Usually refused without a tap; the 入室 button retries with one.
+  try { window.top.location.replace(homeUrl); } catch {}
+}
+
 let state = createState();
 let resume = load();
 let armed = false;
@@ -245,6 +278,11 @@ let enterFromSave = false;
 
 async function enterWithCamera(fromSave) {
   enterFromSave = fromSave;
+  if (isFramed()) {
+    goHome();
+    window.setTimeout(() => showCameraNote(true), 600);
+    return;
+  }
   audio.start();
   setCameraButtonsDisabled(true);
   const allowed = await camera.open();
@@ -270,11 +308,26 @@ scene.cameraRetries.forEach((button) => {
   });
 });
 
+const browserUrl = (() => {
+  const url = new URL(homeUrl);
+  // LINE's in-app browser hands URLs with this flag to the default browser.
+  url.searchParams.set("openExternalBrowser", "1");
+  return url.href;
+})();
+
+scene.cameraNotes.forEach((note) => {
+  note.querySelector(".camera-open-browser").href = browserUrl;
+});
+
 async function showCameraNote(on) {
-  const blocked = on && (await camera.isBlocked());
+  const hosted = on && camera.needsBrowser();
+  const blocked = on && !hosted && (await camera.isBlocked());
+  const elsewhere = hosted || (on && !blocked && camera.refusedQuickly());
   scene.cameraNotes.forEach((note) => {
     note.hidden = !on;
     note.querySelector(".camera-blocked").hidden = !blocked;
+    note.querySelector(".camera-elsewhere").hidden = !elsewhere;
+    note.querySelector(".camera-open-browser").hidden = !elsewhere;
   });
 }
 
@@ -937,11 +990,13 @@ function enterAfterDark(atOnce = false) {
 
 function createCamera() {
   const DARK_MAX = 30;
+  const QUICK_REFUSAL_MS = 300;
   const WARMUP_MS = 1000;
   const HOLD_MS = 800;
   let stream = null;
   let video = null;
   let opening = null;
+  let quickRefusal = false;
   let timer = 0;
   let token = 0;
   const canvas = document.createElement("canvas");
@@ -957,6 +1012,8 @@ function createCamera() {
   function open() {
     if (live()) return Promise.resolve(true);
     if (!navigator.mediaDevices?.getUserMedia) return Promise.resolve(false);
+    const askedAt = performance.now();
+    quickRefusal = false;
     opening ??= navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
       .then((next) => {
         stream = next;
@@ -971,9 +1028,22 @@ function createCamera() {
         video.play().catch(() => {});
         return true;
       })
-      .catch(() => false)
+      .catch(() => {
+        // No person can answer a prompt this fast: the page's host refused without asking.
+        quickRefusal = performance.now() - askedAt < QUICK_REFUSAL_MS;
+        return false;
+      })
       .finally(() => { opening = null; });
     return opening;
+  }
+
+  // A blocked site also refuses instantly, so callers check isBlocked() before trusting quickRefusal.
+  function needsBrowser() {
+    return isFramed() || !navigator.mediaDevices?.getUserMedia;
+  }
+
+  function refusedQuickly() {
+    return quickRefusal;
   }
 
   function measure() {
@@ -1048,7 +1118,7 @@ function createCamera() {
     video = null;
   }
 
-  return { open, watch, sample, isDark, isBlocked, stopWatch, close, limits: { DARK_MAX } };
+  return { open, watch, sample, isDark, isBlocked, needsBrowser, refusedQuickly, stopWatch, close, limits: { DARK_MAX } };
 }
 
 function load() {

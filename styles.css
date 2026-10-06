@@ -1511,14 +1511,24 @@ h1 {
 
 .camera-note p { margin: 0; }
 
-.camera-note .camera-blocked {
+.camera-note .camera-open-browser {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.camera-note .camera-blocked,
+.camera-note .camera-elsewhere {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.8;
 }
 
 .camera-note[hidden],
-.camera-note .camera-blocked[hidden] { display: none; }
+.camera-note .camera-blocked[hidden],
+.camera-note .camera-elsewhere[hidden],
+.camera-note .camera-open-browser[hidden] { display: none; }
 
 .camera-feed {
   position: fixed;
