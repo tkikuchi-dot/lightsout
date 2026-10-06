@@ -875,6 +875,43 @@ body.phase-tripping #reset-room {
   pointer-events: none;
 }
 
+#rules-open {
+  position: fixed;
+  z-index: 9;
+  top: calc(max(16px, env(safe-area-inset-top)) + 80px);
+  left: max(16px, env(safe-area-inset-left));
+  margin: 0;
+  padding: 8px 2px;
+  text-align: left;
+}
+
+#rules-panel {
+  position: fixed;
+  z-index: 12;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 26px 20px 22px;
+  background: #16130f;
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.55), 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+#rules-panel[hidden] { display: none; }
+
+#rules-panel .rules { margin: 0; }
+
+body:not(.phase-play) #rules-open,
+body:not(.phase-play) #rules-panel {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 #undo {
   position: fixed;
   z-index: 9;
@@ -1664,7 +1701,7 @@ body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
       "brand settings"
       "rooms rooms";
     gap: 10px 12px;
-    padding: 108px 12px 0;
+    padding: 156px 12px 0;
   }
 
   .brand { grid-area: brand; margin-left: 0; }
@@ -1694,6 +1731,14 @@ body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
 
   #reset-room {
     top: calc(max(10px, env(safe-area-inset-top)) + 48px);
+    left: max(10px, env(safe-area-inset-left));
+    min-height: 44px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  #rules-open {
+    top: calc(max(10px, env(safe-area-inset-top)) + 96px);
     left: max(10px, env(safe-area-inset-left));
     min-height: 44px;
     font-size: 12px;

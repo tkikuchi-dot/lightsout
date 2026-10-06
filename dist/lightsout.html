@@ -887,6 +887,43 @@ body.phase-tripping #reset-room {
   pointer-events: none;
 }
 
+#rules-open {
+  position: fixed;
+  z-index: 9;
+  top: calc(max(16px, env(safe-area-inset-top)) + 80px);
+  left: max(16px, env(safe-area-inset-left));
+  margin: 0;
+  padding: 8px 2px;
+  text-align: left;
+}
+
+#rules-panel {
+  position: fixed;
+  z-index: 12;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 26px 20px 22px;
+  background: #16130f;
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.55), 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+#rules-panel[hidden] { display: none; }
+
+#rules-panel .rules { margin: 0; }
+
+body:not(.phase-play) #rules-open,
+body:not(.phase-play) #rules-panel {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 #undo {
   position: fixed;
   z-index: 9;
@@ -1676,7 +1713,7 @@ body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
       "brand settings"
       "rooms rooms";
     gap: 10px 12px;
-    padding: 108px 12px 0;
+    padding: 156px 12px 0;
   }
 
   .brand { grid-area: brand; margin-left: 0; }
@@ -1706,6 +1743,14 @@ body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
 
   #reset-room {
     top: calc(max(10px, env(safe-area-inset-top)) + 48px);
+    left: max(10px, env(safe-area-inset-left));
+    min-height: 44px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  #rules-open {
+    top: calc(max(10px, env(safe-area-inset-top)) + 96px);
     left: max(10px, env(safe-area-inset-left));
     min-height: 44px;
     font-size: 12px;
@@ -1809,6 +1854,11 @@ body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
     </div>
 
     <button id="reset-room" class="quiet" type="button">配置を戻す</button>
+    <button id="rules-open" class="quiet" type="button">ルールをもう一度確認する</button>
+    <div id="rules-panel" role="dialog" aria-modal="true" aria-label="ルール" hidden>
+      <div class="rules"></div>
+      <button id="rules-close" class="metal" type="button">閉じる</button>
+    </div>
     <button id="undo" type="button">一手戻る</button>
     <button id="clear-btn" type="button">クリア</button>
     <button id="debug-all-on" type="button" hidden>全点灯</button>
@@ -2231,6 +2281,9 @@ const scene = {
   clear: document.querySelector("#clear-btn"),
   settings: document.querySelector("#settings"),
   settingsOpen: document.querySelector("#settings-open"),
+  rulesOpen: document.querySelector("#rules-open"),
+  rulesPanel: document.querySelector("#rules-panel"),
+  rulesClose: document.querySelector("#rules-close"),
   brightness: document.querySelector("#brightness"),
   volume: document.querySelector("#volume"),
   brightnessVal: document.querySelector("#brightness-val"),
@@ -2411,6 +2464,18 @@ scene.clear.addEventListener("pointerenter", (event) => {
   if (event.pointerType === "touch" && navigator.vibrate) navigator.vibrate(10);
 });
 
+scene.rulesPanel.querySelector(".rules").innerHTML = document.querySelector("#title .rules").innerHTML;
+
+scene.rulesOpen.addEventListener("click", () => {
+  scene.settings.hidden = true;
+  scene.rulesPanel.hidden = false;
+  scene.rulesClose.focus();
+});
+
+scene.rulesClose.addEventListener("click", () => {
+  scene.rulesPanel.hidden = true;
+});
+
 scene.settingsOpen.addEventListener("click", () => {
   scene.settings.hidden = !scene.settings.hidden;
   if (!scene.settings.hidden) scene.brightness.focus();
@@ -2542,7 +2607,10 @@ if (DEBUG) {
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") scene.settings.hidden = true;
+  if (event.key === "Escape") {
+    scene.settings.hidden = true;
+    scene.rulesPanel.hidden = true;
+  }
 });
 
 document.addEventListener("pointerdown", (event) => {

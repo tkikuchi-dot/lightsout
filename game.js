@@ -33,6 +33,9 @@ const scene = {
   clear: document.querySelector("#clear-btn"),
   settings: document.querySelector("#settings"),
   settingsOpen: document.querySelector("#settings-open"),
+  rulesOpen: document.querySelector("#rules-open"),
+  rulesPanel: document.querySelector("#rules-panel"),
+  rulesClose: document.querySelector("#rules-close"),
   brightness: document.querySelector("#brightness"),
   volume: document.querySelector("#volume"),
   brightnessVal: document.querySelector("#brightness-val"),
@@ -213,6 +216,18 @@ scene.clear.addEventListener("pointerenter", (event) => {
   if (event.pointerType === "touch" && navigator.vibrate) navigator.vibrate(10);
 });
 
+scene.rulesPanel.querySelector(".rules").innerHTML = document.querySelector("#title .rules").innerHTML;
+
+scene.rulesOpen.addEventListener("click", () => {
+  scene.settings.hidden = true;
+  scene.rulesPanel.hidden = false;
+  scene.rulesClose.focus();
+});
+
+scene.rulesClose.addEventListener("click", () => {
+  scene.rulesPanel.hidden = true;
+});
+
 scene.settingsOpen.addEventListener("click", () => {
   scene.settings.hidden = !scene.settings.hidden;
   if (!scene.settings.hidden) scene.brightness.focus();
@@ -344,7 +359,10 @@ if (DEBUG) {
 }
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") scene.settings.hidden = true;
+  if (event.key === "Escape") {
+    scene.settings.hidden = true;
+    scene.rulesPanel.hidden = true;
+  }
 });
 
 document.addEventListener("pointerdown", (event) => {
