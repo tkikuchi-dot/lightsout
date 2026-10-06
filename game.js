@@ -73,12 +73,10 @@ function isMirrored() {
   return !local && !location.href.startsWith(HOME);
 }
 
+// Sandboxed hosts tend to allow popups but not top navigation, so try a new tab first.
 function goHome() {
-  try {
-    window.top.location.href = homeUrl;
-  } catch {
-    window.open(homeUrl, "_blank");
-  }
+  if (window.open(homeUrl, "_blank")) return;
+  try { window.top.location.href = homeUrl; } catch {}
 }
 
 if (isMirrored()) {
