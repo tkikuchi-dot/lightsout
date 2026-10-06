@@ -1,5 +1,6 @@
 (() => {
 const {
+  BREAKER_AMPS,
   LIGHT_DRAW,
   ROOMS,
   breakerTrips,
@@ -8,6 +9,7 @@ const {
   gaugeLevel,
   isAllOff,
   isStrained,
+  lightRatio,
   loadRatio,
   maxLights,
   power,
@@ -51,6 +53,8 @@ const scene = {
   cameraNotes: document.querySelectorAll(".camera-note"),
   cameraRetries: document.querySelectorAll(".camera-retry"),
   cameraReading: document.querySelector("#camera-reading"),
+  jump: document.querySelector("#jump"),
+  jumpLink: document.querySelector("#jump-link"),
 };
 
 const DEBUG = new URLSearchParams(location.search).get("DEBUG")?.toUpperCase() === "TRUE";
@@ -73,18 +77,10 @@ function isMirrored() {
   return !local && !location.href.startsWith(HOME);
 }
 
-// Sandboxed hosts tend to allow popups but not top navigation, so try a new tab first.
-function goHome() {
-  if (window.open(homeUrl, "_blank")) return;
-  try { window.top.location.href = homeUrl; } catch {}
-}
+if (isMirrored()) location.replace(homeUrl);
 
-if (isMirrored()) {
-  location.replace(homeUrl);
-} else if (isFramed()) {
-  // Usually refused without a tap; the 入室 button retries with one.
-  try { window.top.location.replace(homeUrl); } catch {}
-}
+scene.jumpLink.href = homeUrl;
+scene.jumpLink.textContent = homeUrl;
 
 let state = createState();
 let resume = load();
@@ -276,11 +272,6 @@ let enterFromSave = false;
 
 async function enterWithCamera(fromSave) {
   enterFromSave = fromSave;
-  if (isFramed()) {
-    goHome();
-    window.setTimeout(() => showCameraNote(true), 600);
-    return;
-  }
   audio.start();
   setCameraButtonsDisabled(true);
   const allowed = await camera.open();
@@ -523,9 +514,12 @@ function render() {
 
 function renderTitle() {
   const hasResume = Boolean(resume);
-  scene.enter.hidden = hasResume;
-  scene.continue.hidden = !hasResume;
-  scene.discard.hidden = !hasResume;
+  // Inside another site's frame the camera is refused, so players must leave via a link tap.
+  const framed = isFramed();
+  scene.enter.hidden = framed || hasResume;
+  scene.continue.hidden = framed || !hasResume;
+  scene.discard.hidden = framed || !hasResume;
+  scene.jump.hidden = !framed;
 }
 
 function paintBoard() {
@@ -608,13 +602,29 @@ function boardSignature() {
 
 function switchPlate() {
   const plate = span("switch-plate");
+  const terminals = () => {
+    const strip = span("switch-terminals");
+    strip.append(span("switch-screw"), span("switch-screw"));
+    return strip;
+  };
+  const rating = span("switch-rating");
+  const kind = span("switch-kind");
+  kind.textContent = "主幹";
+  const amps = span("switch-amps");
+  amps.textContent = `${BREAKER_AMPS}A`;
+  rating.append(kind, amps, boltMark());
+  const meter = span("switch-meter");
+  meter.append(span("switch-meter-fill"));
+  const meterValue = span("switch-meter-value");
   const onLabel = span("toggle-word on");
   onLabel.textContent = "ON";
   const offLabel = span("toggle-word off");
   offLabel.textContent = "OFF";
   const well = span("switch-well");
   well.append(span("switch-lever"));
-  plate.append(span("switch-screw"), onLabel, well, offLabel, span("switch-screw"));
+  const test = span("switch-test");
+  test.append(span("switch-test-button"));
+  plate.append(terminals(), rating, meter, meterValue, onLabel, well, offLabel, test, terminals());
   return plate;
 }
 
@@ -632,14 +642,12 @@ function boltMark() {
 function sealedSwitch() {
   const wrap = div("switch-case");
   wrap.setAttribute("role", "img");
-  wrap.setAttribute("aria-label", "ガラスの中のスイッチ");
+  wrap.setAttribute("aria-label", "ガラスの中のブレーカー");
   const toggle = div("toggle");
   const tripped = state.cut || breakerTrips(state);
   toggle.setAttribute("aria-pressed", tripped ? "false" : "true");
   toggle.setAttribute("aria-hidden", "true");
-  const plate = switchPlate();
-  plate.append(boltMark());
-  toggle.append(plate);
+  toggle.append(switchPlate());
   const cap = div("glass-cap switch-glass");
   cap.append(span("sheen"));
   wrap.append(toggle, cap);
@@ -838,6 +846,10 @@ function paintSealedSwitch() {
   if (!toggle) return;
   const off = state.cut || breakerTrips(state);
   toggle.setAttribute("aria-pressed", off ? "false" : "true");
+  const percent = Math.round(lightRatio(state) * 100);
+  toggle.style.setProperty("--meter", `${percent}%`);
+  toggle.querySelector(".switch-meter").classList.toggle("is-full", percent >= 100);
+  toggle.querySelector(".switch-meter-value").textContent = `${percent}%`;
 }
 
 function paintLeak(root, room, grid) {

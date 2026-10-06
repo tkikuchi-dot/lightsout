@@ -298,36 +298,137 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   width: 92px;
-  padding: 12px 0 14px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #4a433b, #2c2822 42%, #1c1916);
-  border: 1px solid #6a6054;
+  overflow: hidden;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #cfc8b8, #f1ece1 22%, #ebe5d8 70%, #c9c1b0);
+  border: 1px solid #a89f8e;
   box-shadow:
-    inset 0 1px 0 rgba(255, 236, 210, 0.18),
-    0 10px 18px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 10px 18px rgba(0, 0, 0, 0.45);
+}
+
+.switch-terminals {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  align-self: stretch;
+  height: 20px;
+  background: linear-gradient(#5b554c, #3a352f);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
 .switch-screw {
-  width: 8px;
-  height: 8px;
+  position: relative;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #f3e6d2, #6a6156 55%, #241f1a);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+  background: radial-gradient(circle at 35% 30%, #f4f1ea, #a9a397 55%, #55504a);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
 }
 
-.toggle-word { line-height: 1; }
+.switch-screw::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 1.5px;
+  translate: 0 -50%;
+  rotate: -35deg;
+  background: #4a453e;
+}
+
+.switch-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: #3a332b;
+  line-height: 1;
+}
+
+.switch-kind {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.switch-amps {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.switch-meter {
+  position: relative;
+  width: 66px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #1a1714;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8), 0 0 0 1px #a89f8e;
+}
+
+.switch-meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--meter, 0%);
+  background: linear-gradient(90deg, #4f9a3a, #e8c23a 60%, #e8483c);
+  background-size: 66px 100%;
+  transition: width 0.25s ease;
+}
+
+.switch-meter::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 5.6px, rgba(26, 23, 20, 0.85) 5.6px 6.6px);
+}
+
+.switch-meter.is-full .switch-meter-fill { box-shadow: 0 0 8px rgba(232, 72, 60, 0.9); }
+
+.switch-meter-value {
+  margin-top: -2px;
+  color: #3a332b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.toggle-word {
+  line-height: 1;
+  color: #9a9184;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
 .toggle[aria-pressed="true"] .toggle-word.on,
-.toggle[aria-pressed="false"] .toggle-word.off { color: #fff1d4; }
+.toggle[aria-pressed="false"] .toggle-word.off { color: #1e1a16; }
 
 .switch-well {
   position: relative;
   width: 30px;
   height: 62px;
   border-radius: 3px;
-  background: #100e0c;
-  box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.75), inset 0 0 0 1px #2a261f;
+  background: #1a1714;
+  box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.75), 0 0 0 2px #d9d2c3, 0 0 0 3px #a89f8e;
+}
+
+.switch-test {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.switch-test-button {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: linear-gradient(#ffe36b, #d9a814);
+  box-shadow: 0 1px 0 #7a5a08, inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .switch-lever {
@@ -427,7 +528,6 @@ main {
 }
 
 .cell:active .bulb { scale: 0.96; }
-
 .bulb {
   z-index: 1;
   width: var(--bulb);
@@ -688,13 +788,11 @@ main {
 }
 
 .switch-case .bolt {
-  position: absolute;
-  top: 13px;
-  right: 8px;
-  width: 11px;
-  height: 16px;
-  fill: #e6d3b0;
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.45));
+  width: 8px;
+  height: 12px;
+  fill: #d9a814;
+  stroke: #3a332b;
+  stroke-width: 1.2;
   pointer-events: none;
 }
 
@@ -1510,6 +1608,27 @@ h1 {
 
 #ending-line[hidden] { display: none; }
 
+#jump {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  letter-spacing: 0.08em;
+}
+
+#jump[hidden] { display: none; }
+
+#jump p { margin: 0; }
+
+#jump-link {
+  color: #ffd99a;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+  text-underline-offset: 4px;
+}
+
 .camera-note {
   display: flex;
   flex-direction: column;
@@ -1797,6 +1916,10 @@ body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
           <p>ゲームをするときは部屋を明るくしてプレイしましょう。</p>
           <p>条件を満たしたら必ずクリアボタンを押してください。</p>
         </div>
+        <div id="jump" hidden>
+          <p>一回別のサイトにジャンプします。</p>
+          <a id="jump-link" target="_blank" rel="noopener"></a>
+        </div>
         <button id="enter" class="metal" type="button">入室</button>
         <button id="continue" class="metal" type="button" hidden>つづきから</button>
         <button id="discard" class="quiet" type="button" hidden>最初から</button>
@@ -1836,7 +1959,8 @@ body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
 // The breaker trips when every bulb is lit and both sliders are at 100.
 
 const LIGHT_DRAW = 17;
-const BREAKER_AMPS = 30;
+// Matches the bulb count across all rooms.
+const BREAKER_AMPS = 38;
 const RED_RATIO = 0.8;
 const STRAIN_RATIO = 0.8;
 const DEFAULT_BRIGHTNESS = 30;
@@ -2032,6 +2156,10 @@ function gaugeLevel(state) {
   return level;
 }
 
+function lightRatio(state) {
+  return countLights(state) / maxLights();
+}
+
 function isStrained(state) {
   if (state.cut || breakerTrips(state)) return false;
   return countLights(state) === maxLights();
@@ -2124,6 +2252,7 @@ globalThis.LightsOut = {
   countLights,
   power,
   loadRatio,
+  lightRatio,
   isFullyOn,
   gaugeLevel,
   breakerTrips,
@@ -2137,6 +2266,7 @@ globalThis.LightsOut = {
     <script>
 (() => {
 const {
+  BREAKER_AMPS,
   LIGHT_DRAW,
   ROOMS,
   breakerTrips,
@@ -2145,6 +2275,7 @@ const {
   gaugeLevel,
   isAllOff,
   isStrained,
+  lightRatio,
   loadRatio,
   maxLights,
   power,
@@ -2188,6 +2319,8 @@ const scene = {
   cameraNotes: document.querySelectorAll(".camera-note"),
   cameraRetries: document.querySelectorAll(".camera-retry"),
   cameraReading: document.querySelector("#camera-reading"),
+  jump: document.querySelector("#jump"),
+  jumpLink: document.querySelector("#jump-link"),
 };
 
 const DEBUG = new URLSearchParams(location.search).get("DEBUG")?.toUpperCase() === "TRUE";
@@ -2210,18 +2343,10 @@ function isMirrored() {
   return !local && !location.href.startsWith(HOME);
 }
 
-// Sandboxed hosts tend to allow popups but not top navigation, so try a new tab first.
-function goHome() {
-  if (window.open(homeUrl, "_blank")) return;
-  try { window.top.location.href = homeUrl; } catch {}
-}
+if (isMirrored()) location.replace(homeUrl);
 
-if (isMirrored()) {
-  location.replace(homeUrl);
-} else if (isFramed()) {
-  // Usually refused without a tap; the 入室 button retries with one.
-  try { window.top.location.replace(homeUrl); } catch {}
-}
+scene.jumpLink.href = homeUrl;
+scene.jumpLink.textContent = homeUrl;
 
 let state = createState();
 let resume = load();
@@ -2413,11 +2538,6 @@ let enterFromSave = false;
 
 async function enterWithCamera(fromSave) {
   enterFromSave = fromSave;
-  if (isFramed()) {
-    goHome();
-    window.setTimeout(() => showCameraNote(true), 600);
-    return;
-  }
   audio.start();
   setCameraButtonsDisabled(true);
   const allowed = await camera.open();
@@ -2660,9 +2780,12 @@ function render() {
 
 function renderTitle() {
   const hasResume = Boolean(resume);
-  scene.enter.hidden = hasResume;
-  scene.continue.hidden = !hasResume;
-  scene.discard.hidden = !hasResume;
+  // Inside another site's frame the camera is refused, so players must leave via a link tap.
+  const framed = isFramed();
+  scene.enter.hidden = framed || hasResume;
+  scene.continue.hidden = framed || !hasResume;
+  scene.discard.hidden = framed || !hasResume;
+  scene.jump.hidden = !framed;
 }
 
 function paintBoard() {
@@ -2745,13 +2868,29 @@ function boardSignature() {
 
 function switchPlate() {
   const plate = span("switch-plate");
+  const terminals = () => {
+    const strip = span("switch-terminals");
+    strip.append(span("switch-screw"), span("switch-screw"));
+    return strip;
+  };
+  const rating = span("switch-rating");
+  const kind = span("switch-kind");
+  kind.textContent = "主幹";
+  const amps = span("switch-amps");
+  amps.textContent = `${BREAKER_AMPS}A`;
+  rating.append(kind, amps, boltMark());
+  const meter = span("switch-meter");
+  meter.append(span("switch-meter-fill"));
+  const meterValue = span("switch-meter-value");
   const onLabel = span("toggle-word on");
   onLabel.textContent = "ON";
   const offLabel = span("toggle-word off");
   offLabel.textContent = "OFF";
   const well = span("switch-well");
   well.append(span("switch-lever"));
-  plate.append(span("switch-screw"), onLabel, well, offLabel, span("switch-screw"));
+  const test = span("switch-test");
+  test.append(span("switch-test-button"));
+  plate.append(terminals(), rating, meter, meterValue, onLabel, well, offLabel, test, terminals());
   return plate;
 }
 
@@ -2769,14 +2908,12 @@ function boltMark() {
 function sealedSwitch() {
   const wrap = div("switch-case");
   wrap.setAttribute("role", "img");
-  wrap.setAttribute("aria-label", "ガラスの中のスイッチ");
+  wrap.setAttribute("aria-label", "ガラスの中のブレーカー");
   const toggle = div("toggle");
   const tripped = state.cut || breakerTrips(state);
   toggle.setAttribute("aria-pressed", tripped ? "false" : "true");
   toggle.setAttribute("aria-hidden", "true");
-  const plate = switchPlate();
-  plate.append(boltMark());
-  toggle.append(plate);
+  toggle.append(switchPlate());
   const cap = div("glass-cap switch-glass");
   cap.append(span("sheen"));
   wrap.append(toggle, cap);
@@ -2975,6 +3112,10 @@ function paintSealedSwitch() {
   if (!toggle) return;
   const off = state.cut || breakerTrips(state);
   toggle.setAttribute("aria-pressed", off ? "false" : "true");
+  const percent = Math.round(lightRatio(state) * 100);
+  toggle.style.setProperty("--meter", `${percent}%`);
+  toggle.querySelector(".switch-meter").classList.toggle("is-full", percent >= 100);
+  toggle.querySelector(".switch-meter-value").textContent = `${percent}%`;
 }
 
 function paintLeak(root, room, grid) {

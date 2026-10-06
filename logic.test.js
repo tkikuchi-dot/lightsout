@@ -15,6 +15,7 @@ const {
   gaugeLevel,
   isAllOff,
   isStrained,
+  lightRatio,
   loadRatio,
   maxLights,
   power,
@@ -128,6 +129,7 @@ const nudged = press(ROOMS[3].initial, 0, 1, "linked", ROOMS[3]);
 assert.equal(nudged[1][1], 1);
 
 assert.equal(maxLights(), 38);
+assert.equal(BREAKER_AMPS, maxLights());
 assert.equal(tripThreshold(), 38 * LIGHT_DRAW + 200);
 
 function loaded(overrides) {
@@ -145,9 +147,12 @@ assert.equal(power(full), tripThreshold());
 assert.equal(isFullyOn(full), true);
 assert.equal(breakerTrips(full), true);
 assert.equal(formatAmps(power(full)), BREAKER_AMPS.toFixed(1));
+assert.equal(lightRatio(full), 1);
+assert.equal(lightRatio(loaded({ brightness: 0, volume: 0 })), 1);
 
 const missingBulb = loaded();
 missingBulb.grids[0][0][0] = 0;
+assert.equal(lightRatio(missingBulb), 37 / 38);
 assert.equal(breakerTrips(missingBulb), false);
 assert.equal(isStrained(missingBulb), false);
 
@@ -161,7 +166,7 @@ assert.ok(loadRatio(resting) < 1);
 assert.equal(breakerTrips(resting), false);
 assert.equal(isStrained(resting), true);
 
-assert.equal(formatAmps(tripThreshold() - 1), "29.9");
+assert.equal(formatAmps(tripThreshold() - 1), "37.9");
 
 const meter = createState();
 meter.grids = meter.grids.map((grid) => setAll(grid, 0));

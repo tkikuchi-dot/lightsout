@@ -3,7 +3,8 @@
 // The breaker trips when every bulb is lit and both sliders are at 100.
 
 const LIGHT_DRAW = 17;
-const BREAKER_AMPS = 30;
+// Matches the bulb count across all rooms.
+const BREAKER_AMPS = 38;
 const RED_RATIO = 0.8;
 const STRAIN_RATIO = 0.8;
 const DEFAULT_BRIGHTNESS = 30;
@@ -199,6 +200,10 @@ function gaugeLevel(state) {
   return level;
 }
 
+function lightRatio(state) {
+  return countLights(state) / maxLights();
+}
+
 function isStrained(state) {
   if (state.cut || breakerTrips(state)) return false;
   return countLights(state) === maxLights();
@@ -291,6 +296,7 @@ globalThis.LightsOut = {
   countLights,
   power,
   loadRatio,
+  lightRatio,
   isFullyOn,
   gaugeLevel,
   breakerTrips,
