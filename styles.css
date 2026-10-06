@@ -1566,7 +1566,7 @@ body.return-visit #ending-reset { display: none; }
 
 #ending-title[hidden] { display: none; }
 
-body.return-visit #ending-title { animation: rise 0.9s ease 1.1s both; }
+body.return-visit #ending-title { animation: rise 0.9s ease 0.2s both; }
 
 #ending .quiet { animation: rise 0.9s ease 0.55s both; }
 

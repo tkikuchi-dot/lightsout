@@ -292,12 +292,12 @@ if (DEBUG) {
       return;
     }
     const { mean, spread, dark } = sample;
-    const { PITCH_BLACK, DIM, FLAT } = camera.limits;
+    const { DARK_MAX } = camera.limits;
     scene.cameraReading.classList.toggle("is-dark", dark);
     scene.cameraReading.textContent = [
       `明るさ ${mean.toFixed(0)} / ばらつき ${spread.toFixed(0)}`,
       `判定: ${dark ? "暗い（クリア対象）" : "明るい"}`,
-      `暗い条件: 明るさ<${PITCH_BLACK} または 明るさ<${DIM}かつばらつき<${FLAT}`,
+      `暗い条件: 明るさ${DARK_MAX}以下`,
     ].join("\n");
   }, 250);
 }
@@ -457,7 +457,7 @@ function render() {
   scene.endingLine.hidden = line === "";
   scene.endingThankedReset.hidden = !(returnVisit && thanked);
   scene.endingReset.hidden = praised || returnVisit;
-  const title = returnVisit ? "消灯成功" : "";
+  const title = returnVisit && thanked ? "消灯成功" : "";
   if (scene.endingTitle.textContent !== title) scene.endingTitle.textContent = title;
   scene.endingTitle.hidden = title === "";
   if (state.phase !== "play" || scene.kanaEcho.dataset.room !== String(state.room)) {
@@ -936,11 +936,7 @@ function enterAfterDark(atOnce = false) {
 }
 
 function createCamera() {
-  // A finger over the lens is not pure black: auto exposure turns it into a dim, flat red.
-  // So "dark" is either very dim, or dim and nearly uniform.
-  const PITCH_BLACK = 24;
-  const DIM = 60;
-  const FLAT = 22;
+  const DARK_MAX = 30;
   const WARMUP_MS = 1000;
   const HOLD_MS = 800;
   let stream = null;
@@ -993,7 +989,7 @@ function createCamera() {
     }
     const mean = sum / count;
     const spread = Math.sqrt(Math.max(0, sumSq / count - mean * mean));
-    return { mean, spread, dark: mean < PITCH_BLACK || (mean < DIM && spread < FLAT) };
+    return { mean, spread, dark: mean <= DARK_MAX };
   }
 
   function sample() {
@@ -1052,7 +1048,7 @@ function createCamera() {
     video = null;
   }
 
-  return { open, watch, sample, isDark, isBlocked, stopWatch, close, limits: { PITCH_BLACK, DIM, FLAT } };
+  return { open, watch, sample, isDark, isBlocked, stopWatch, close, limits: { DARK_MAX } };
 }
 
 function load() {
