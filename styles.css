@@ -1596,27 +1596,6 @@ h1 {
 
 #ending-line[hidden] { display: none; }
 
-#jump {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  max-width: 100%;
-  letter-spacing: 0.08em;
-}
-
-#jump[hidden] { display: none; }
-
-#jump p { margin: 0; }
-
-#jump-link {
-  color: #ffd99a;
-  font-size: 15px;
-  letter-spacing: 0.02em;
-  word-break: break-all;
-  text-underline-offset: 4px;
-}
-
 .camera-note {
   display: flex;
   flex-direction: column;

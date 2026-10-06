@@ -53,8 +53,6 @@ const scene = {
   cameraNotes: document.querySelectorAll(".camera-note"),
   cameraRetries: document.querySelectorAll(".camera-retry"),
   cameraReading: document.querySelector("#camera-reading"),
-  jump: document.querySelector("#jump"),
-  jumpLink: document.querySelector("#jump-link"),
 };
 
 const DEBUG = new URLSearchParams(location.search).get("DEBUG")?.toUpperCase() === "TRUE";
@@ -78,10 +76,6 @@ function isMirrored() {
 }
 
 if (isMirrored()) location.replace(homeUrl);
-
-scene.jumpLink.href = homeUrl;
-scene.jumpLink.textContent = homeUrl;
-
 let state = createState();
 let resume = load();
 let armed = false;
@@ -272,6 +266,11 @@ let enterFromSave = false;
 
 async function enterWithCamera(fromSave) {
   enterFromSave = fromSave;
+  // Another site's frame refuses the camera, so offer the way out instead of asking.
+  if (isFramed()) {
+    await showCameraNote(true);
+    return;
+  }
   audio.start();
   setCameraButtonsDisabled(true);
   const allowed = await camera.open();
@@ -317,6 +316,7 @@ async function showCameraNote(on) {
     note.querySelector(".camera-blocked").hidden = !blocked;
     note.querySelector(".camera-elsewhere").hidden = !elsewhere;
     note.querySelector(".camera-open-browser").hidden = !elsewhere;
+    note.querySelector(".camera-retry").hidden = elsewhere;
   });
 }
 
@@ -514,12 +514,9 @@ function render() {
 
 function renderTitle() {
   const hasResume = Boolean(resume);
-  // Inside another site's frame the camera is refused, so players must leave via a link tap.
-  const framed = isFramed();
-  scene.enter.hidden = framed || hasResume;
-  scene.continue.hidden = framed || !hasResume;
-  scene.discard.hidden = framed || !hasResume;
-  scene.jump.hidden = !framed;
+  scene.enter.hidden = hasResume;
+  scene.continue.hidden = !hasResume;
+  scene.discard.hidden = !hasResume;
 }
 
 function paintBoard() {
